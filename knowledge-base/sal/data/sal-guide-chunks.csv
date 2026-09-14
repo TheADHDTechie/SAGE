@@ -1,0 +1,725 @@
+﻿id,document_id,title,chapter,section,topic,tags,content_type,language,page_start,page_end,chunk_part,chunk_part_count,word_count,char_count,extraction_method,text
+sal-3b6c873d5505,sal-teacher-librarian-guide,Background: Kenya's Foundational Learning Context,Background,background,organization_and_context,foundational literacy | Kenya | learning crisis,guidance,en,3,3,1,1,155,1124,embedded_pdf_text,"Background Kenya continues to face a foundational learning crisis, with many children unable to read and understand age-appropriate texts by the end of primary school. For many learners, especially those in underserved public primary schools, the challenge is even greater. Many are learning in a second or third language, making it more difficult to acquire foundational literacy skills. At the same time, many schools lack functional libraries, have limited access to age-appropriate and culturally relevant storybooks and structured reading programs that support learners to read with confidence and understanding.
+When children do not have regular opportunities to read, they struggle to develop essential literacy skills such as reading fluency, comprehension, vocabulary and writing. They also miss opportunities to build important life skills and social-emotional competencies such as communication, creativity, empathy, confidence, critical thinking, problem-solving and resilience. These challenges contribute to widening educational inequalities and limit children's ability to succeed in school and later in life."
+sal-7db8ebc8e97f,sal-teacher-librarian-guide,About Start A Library Trust,Background,about-sal,organization_and_context,SAL | mission | program pillars,guidance,en,3,4,1,1,225,1587,embedded_pdf_text,"About Start A Library Trust (SAL) Start A Library Trust (SAL) was established in 2012 to address these challenges by strengthening foundational learning among children from Early Childhood Development (ECD) through Grade 9 in public primary schools across Kenya. SAL believes that literacy is the foundation for lifelong learning, personal growth and active participation in society.
+While school libraries are central to our work, they are a tool for improving learning; -not the end goal. By creating vibrant reading spaces, equipping teachers with practical literacy approaches and promoting a culture of reading, SAL helps children develop strong literacy skills, life skills and social-emotional competencies.
+SAL delivers this work through three interconnected pillars:
+Since its establishment, SAL has grown from supporting one school library to a national foundational learning movement. To date, SAL has established more than 300 school libraries, trained over 3,000 teachers and community champions and reached more than one million learners across 24 counties in Kenya.
+Our work contributes to several Sustainable Development Goals by improving quality education (SDG 4), promoting children's wellbeing through stories and safe learning spaces (SDG 3), advancing gender equality through initiatives such as the Girl-led Imarisha Book Clubs (SDG 5), reducing educational inequalities by working in underserved communities (SDG 10), creating safe and inclusive learning environments (SDG 16) and strengthening partnerships that support sustainable literacy development (SDG 17)."
+sal-9a9eb990f057,sal-teacher-librarian-guide,Purpose and Intended Use of the Manual,Background,manual-purpose,organization_and_context,manual | teacher librarian | learning outcomes,guidance,en,4,4,1,1,201,1351,embedded_pdf_text,"Purpose of the manual SAL believes that a school library is more than a room with books. It is a safe and inclusive learning space where children build strong literacy foundations, develop life skills and values, strengthen their social-emotional wellbeing and discover the joy of reading.
+This manual has been developed to equip teacher librarians with the knowledge, skills and practical guidance needed to effectively manage school libraries and facilitate meaningful play
+-based reading activities that improve learning outcomes.
+The manual is designed to support teacher librarians to:
+• Understand their role in promoting literacy and a reading culture
+• Manage library resources in an organized and sustainable manner
+• Create child-friendly library spaces that encourage independent reading and
+learning.
+• Conduct engaging reading and learning activities for learners
+• Support teachers and school leadership in integrating library use into school
+programs Rather than viewing the library as only a storage room for books, this guide positions the library as a vibrant learning hub that can directly improve foundational literacy outcomes and foster a reading culture when managed well.
+It is therefore intended to serve as a day-to-day reference tool for teacher librarians in carrying out their responsibilities confidently and effectively."
+sal-7b53d4f49c36,sal-teacher-librarian-guide,Why a School Library Matters,Chapter 1: Introduction to Libraries,1.1,library_foundations,school library | foundational literacy | safe learning space,guidance,en,5,5,1,1,209,1520,embedded_pdf_text,"1.1 Why a Library?
+A school library is more than a room with books. It is a safe, inclusive learning space where children develop foundational literacy, life skills and social-emotional competencies. It provides learners with regular access to books and engaging activities that encourage them to read, think, imagine and learn beyond the classroom.
+For many children, especially those in underserved rural and informal settlement communities, the library may be one of the safest and most welcoming spaces in the school.
+Through stories and shared reading experiences, learners are encouraged to express themselves, understand others, build empathy, develop resilience and navigate everyday challenges in a supportive environment.
+A school library supports foundational learning by:
+• Providing regular access to quality and age-appropriate reading materials.
+• Building reading fluency, comprehension, vocabulary, and writing skills.
+• Developing communication, creativity, critical thinking, and problem-solving skills.
+• Promoting positive values, empathy, resilience, and emotional well-being through
+stories.
+• Encouraging independent learning and a lifelong love for reading.
+• Providing an inclusive and safe space where every learner feels welcomed, respected,
+and valued.
+A functional school library also supports teachers by providing quality teaching and learning resources and creating opportunities to deliver engaging literacy and reading activities that strengthen both academic and personal development."
+sal-f5063c79c0a7,sal-teacher-librarian-guide,Role and Responsibilities of the Teacher Librarian,Chapter 1: Introduction to Libraries,1.2,teacher_librarian_role,teacher librarian | responsibilities | reading culture,guidance,en,6,6,1,1,261,1766,embedded_pdf_text,"1.2 Role of the Teacher Librarian In SAL supported schools, the teacher-librarian is a government employed teacher who has been designated by the school to manage the library and lead literacy activities. Through training and ongoing support, SAL strengthens the teacher’s capacity to use the school library as a tool for improving foundational learning.
+The teacher librarian plays a central role in creating a reading culture and ensuring that the school library is an active, organized, friendly and safe space where learners develop literacy skills, life skills and a love for reading.
+The teacher librarian is responsible for:
+• Managing and organizing library books and other reading resources.
+• Ensuring books are borrowed, returned and maintained properly
+• Guiding learners in selecting books that match the interests and reading levels
+• Planning and facilitating weekly library and Maktaba lessons, and monthly book club
+sessions.
+• Supporting other teachers in using library resources during lessons
+• Maintaining simple records on library use, book borrowing and learner participation
+• Working with the headteacher, fellow teachers, parents, and the wider school
+community to strengthen library and literacy activities.
+• Encouraging learners to develop positive reading habits, confidence and a lifelong
+love for reading.
+• Creating a safe, inclusive and welcoming library environment where every learner
+feels encouraged to read and participate.
+• Sharing Photos and videos of the sessions weekly on WhatsApp group.
+In essence, the teacher librarian serves as a library manager, reading ambassador and facilitator of foundational learning, helping every learner access meaningful reading experience that support academic success and personal growth."
+sal-7f951627177e,sal-teacher-librarian-guide,Core Competencies of a Teacher Librarian,Chapter 1: Introduction to Libraries,1.3,teacher_librarian_role,competencies | facilitation | leadership | safeguarding,guidance,en,6,7,1,1,219,1590,embedded_pdf_text,"1.3 Core Competencies of a Teacher Librarian To effectively run a school library and support literacy development, a teacher librarian requires a combination of technical, instructional and interpersonal skills. The key competencies include:
+1. Library management skills: - Ability to organize books, maintain records, manage
+borrowing systems and ensure proper care of library resources.
+2. Facilitation skills: - Ability to conduct storytelling, guided reading, read aloud, book
+discussions, vocabulary activities and other learner-centered reading sessions.
+3. Child engagement: - Ability to create warm relationships with learners, motivate
+reluctant readers and make reading enjoyable for children of different ages and reading ability levels.
+4. Communication and Collaboration: - Ability to work closely with Heads of
+Institutions, fellow teachers, parents and learners in promoting library use and reading activities.
+5. Planning and record keeping: - Ability to plan weekly library programs, maintain activity
+schedules and document borrowing, attendance, and learner progress.
+6. Creativity and problem-solving: - Ability to use available materials creatively, introduce
+fun literacy activities and find practical solutions even in low-resource settings.
+7. Commitment and Leadership: - Ability to take ownership of the library, inspire others
+and consistently champion a reading culture in the school.
+8. Child safeguarding awareness: - Teacher librarians should familiarize themselves with
+and adhere to the school's and SAL's Child Safeguarding Policy and reporting procedures."
+sal-254dc12544f6,sal-teacher-librarian-guide,What SAL Means by a School Library,Chapter 2: Practical School Library Operations,2.1,library_operations,library definition | child-friendly space | school library,guidance,en,8,8,1,1,127,857,embedded_pdf_text,"2.1 What is a library?
+At SAL, a library is a transformed, child-friendly learning space refurbished from an existing classroom, stocked with locally authored, culturally relevant, age-appropriate storybooks, educational toys and puzzles.
+A school library can only serve its purpose when it is well organized, easy to use, welcoming to learners, and consistently managed. Even where books and shelves are available, the absence of clear systems can lead to disorder, low usage, damaged materials and reduced learner interest.
+The teacher librarian therefore plays an important role in putting in place simple but effective day-to-day library management systems that ensure the library remains functional, attractive and useful to both learners and teachers.
+This chapter provides practical guidance on how to set up and run smooth school library operations."
+sal-0423ac330bdd,sal-teacher-librarian-guide,Setting Up a Child-Friendly Library Space,Chapter 2: Practical School Library Operations,2.2,library_space,library setup | reading corners | displays | accessibility,guidance,en,8,9,1,1,196,1234,embedded_pdf_text,"2.2 Setting Up the Library Space The library should be arranged in a way that makes learners feel comfortable, safe, and excited to read. It should not look like a locked store or an office, but rather a child-friendly learning environment.
+A well-set-up library should have:
+a) A clean and conducive reading space
+• Ensure the room is clean, well ventilated, and properly lit.
+• Remove unnecessary clutter.
+• Arrange seating mats, desks, benches or chairs where learners can sit comfortably.
+• Keep the room quiet and welcoming.
+b) Clearly arranged bookshelves or storage areas
+Place books on shelves, cabinets, boxes or labeled corners where learners can easily see and access them.
+Avoid piling books in cartons or locked cupboards unless necessary.
+c) Reading corners or activity areas
+Where space allows, create any of the following;
+❖ a storytelling corner
+❖ silent reading corner
+❖ group discussion corner
+❖ educational games corner.
+d) Display and motivation materials
+The library should include visual materials to make the space lively and encourage participation. Examples include;
+❖ reading charts
+❖ library rules
+❖ word walls
+❖ learner book
+reviews
+❖ reading
+competition boards
+❖ posters with
+motivational reading message"
+sal-6ad9f66d2582,sal-teacher-librarian-guide,Organizing and Arranging Books,Chapter 2: Practical School Library Operations,2.3,book_organization,bookshelves | grade level | fiction | non-fiction,guidance,en,9,9,1,1,153,940,embedded_pdf_text,"2.3 Organizing and arranging Books Books should be arranged in a simple system that allows both the teacher librarian and learners to find and return them easily and each section should be clearly labeled.
+Books may be grouped according to:
+❖ learner age or grade level
+❖ fiction and non-fiction
+❖ language
+❖ subject reference books
+Simple Good Practices for Book Arrangement
+❖ Display books in a portrait or vertical layout for easy identification of book titles.
+❖ Avoid overcrowding shelves.
+❖ Keep frequently used books where children can reach them easily.
+❖ Damaged books should be repaired and not mixed carelessly with good copies.
+❖ New books should be introduced and displayed attractively.
+❖ If arranged by grade or age, books for lower grades/young learners should be
+arranged on lower shelves, while the higher shelves should be for upper grades/older learners.
+TIP: The goal is not perfection but easy accessibility and order!"
+sal-e25a133d1fc8,sal-teacher-librarian-guide,"Book Coding, Labeling and Numbering",Chapter 2: Practical School Library Operations,2.4,book_inventory,book codes | labels | accountability,guidance,en,10,10,1,1,67,444,embedded_pdf_text,"2.4 Book Coding, Labeling and Numbering Every book in the library should have a simple identification mark to help with tracking and accountability.
+Each book should contain:
+• School/library stamp (where available)
+• Borrowing pocket/card if using manual issue system (where available)
+• Book code number e.g issuing organization name-( if applicable) /Donor/name
+of school (First 3 letters)/ book no/copy no Example: SAL / Donor/ Sch/ 0001/C1"
+sal-8c2146ee5bfd,sal-teacher-librarian-guide,"Borrowing, Returning and Selecting Suitable Books",Chapter 2: Practical School Library Operations,2.5,circulation_and_book_selection,borrowing | returns | five finger rule | reading level,guidance,en,10,11,1,1,317,1830,embedded_pdf_text,"2.5 Borrowing and Returning Procedures A functional library should have a clear and consistent borrowing system to ensure books circulate safely among learners.
+The teacher librarian should establish:
+a) Borrowing days and times
+Decide:
+❖ which classes visit on which days
+❖ what time learners can borrow books
+❖ when books should be returned
+Tip: Incorporate library sessions in the school timetable to avoid overcrowding and confusion.
+b) Borrowing rules
+❖ Learners should know:
+❖ how many books they can borrow at a time
+❖ how long they can keep the book
+❖ responsibility for caring for the book
+❖ what to do in case of loss or damage
+Every borrowed book should be recorded in a borrowing register. This help monitor reading habits and hold learners accountable and responsible. (sample attached in the index)
+c) Book selection for learner
+The Five Finger Rule is one strategy that helps learners choose books that are appropriate for their reading ability, improving confidence, comprehension and enjoyment of reading How It Works
+1. Ask the learner to open a book and read one full page.
+2. Every time the learner finds a difficult word they cannot read or understand, they
+raise one finger.
+3. Count the number of fingers raised at the end of the page.
+Fingers Raised Meaning 0–1 Fingers The book may be too easy.
+2–3 Fingers The book is a good fit for the learner.
+4–5 Fingers The book may be too hard. Choose another book.
+Key Considerations
+❖ Interest Matters: If a child is highly interested in the topic, they may still enjoy a
+book with 4-5 fingers.
+❖ Not a Rigid Rule: The method is a guide, not a strict limitation, and should be used
+to encourage independent reading choices.
+❖ Alternative Support: For books that are too hard (4-5 fingers), they can still be
+used for reading with support from a parent or teacher."
+sal-4ae98c8371dc,sal-teacher-librarian-guide,Daily and Weekly Library Duties,Chapter 2: Practical School Library Operations,2.6,library_routines,daily duties | weekly duties | library management,guidance,en,12,12,1,1,79,566,embedded_pdf_text,"2.6 Daily and Weekly Duties of the Teacher Librarian For the library to remain active, the teacher librarian should maintain routine management tasks.
+Daily Duties Open and prepare the library for learners.
+Ensure books are arranged properly.
+Supervise borrowing and returning.
+Guide learners in choosing books.
+Maintain cleanliness and order.
+Conduct short reading support where needed.
+Weekly Duties Review borrowing records.
+Inspect damaged or missing books.
+Update book inventory.
+Conduct at least one organized literacy activity.
+Update reading displays/charts."
+sal-e5aff2fd81e2,sal-teacher-librarian-guide,Library Rules and Learner Discipline,Chapter 2: Practical School Library Operations,2.7,library_rules,library rules | learner discipline | book care,guidance,en,12,12,1,1,78,486,embedded_pdf_text,"2.7 Library Rules and Learner Discipline Every library should have simple rules displayed clearly for learners.
+Rules should be explained positively as ways of caring for shared learning resources.
+The teacher librarian should regularly remind learners of these expectations.
+Examples of library rules:
+• Keep quiet while inside the library.
+• Return books on time.
+• Do not tear, fold, or write on books.
+• Return books to the teacher librarian after reading.
+• Keep the library clean."
+sal-8a4aeec83d8d,sal-teacher-librarian-guide,"Record Keeping, Documentation and Stocktaking",Chapter 2: Practical School Library Operations,2.8,records_and_reporting,records | stocktaking | inventory | attendance,guidance,en,12,13,1,1,233,1560,embedded_pdf_text,"2.8 Record Keeping and Documentation Good record keeping helps the teacher librarian monitor library usage, identify reading trends and account for books. It also provides information on learner participation in literacy activities and, helps the school and supporting partners understand how the library resources are utilized.
+Accurate records also support school reporting, evidence-based decision making and contribute to monitoring the effectiveness of library and literacy programs.
+Important records to maintain include: (see index for sample tools)
+a) Book inventory register – for stock taking
+Stocktaking is the process of counting and checking all the books in the library to confirm which books are available, missing, damaged or need attention.
+How to Do Stocktaking
+• Prepare the library book inventory register
+• Compare the books physically present on each shelf against the library register.
+• Confirm its code and tittle and tick off each book found in the register
+• Mark its status: missing, available, under repair or damaged
+• Return any misplaced books to their correct shelf
+Frequency of Stocktaking: SAL schools should do Stocktaking termly. Regular stocktaking makes it easy to notice a missing book quickly, while it can still be traced.
+b) Borrowing/return register - identify popular books and promote
+accountability for library resources
+c) Learner attendance registers - monitor library use and identify popular
+reading activities
+d) Damaged/lost books register - for stock taking and promote accountability
+for library resources"
+sal-cddf9c9898ed,sal-teacher-librarian-guide,Maintaining a Safe and Attractive Library,Chapter 2: Practical School Library Operations,2.9,library_space,maintenance | book repair | displays | welcoming environment,guidance,en,13,13,1,1,59,346,embedded_pdf_text,"2.9 Maintaining a Safe and Attractive Library Environment A library should be a place where learners want to spend time.
+The teacher librarian should ensure that:
+• Books are dusted regularly
+• Torn books are repaired
+• Shelves are neat
+• Displays are refreshed
+• The room is decorated with learner work
+• The environment feels warm and welcoming"
+sal-42a4199d45f1,sal-teacher-librarian-guide,Reading Activities: Purpose and Approach,Chapter 3: Bringing Books to Life,3.1,reading_activities,literacy activities | social-emotional learning | reading for pleasure,guidance,en,14,14,1,1,163,1238,embedded_pdf_text,"3.1 Introduction A school library should be an active learning space where learners regularly engage in meaningful reading experiences that strengthen literacy, life skills and social-emotional competencies. Through stories, discussions, role play and other interactive activities, learners develop reading fluency, comprehension, communication and critical thinking while also building confidence, empathy, resilience and positive relationships.
+The storybooks stocked in the library are windows into other lives, mirrors of children's own experiences and doors to many possibilities. Stories also create safe opportunities for learners to express emotions, discuss difficult topics, understand different perspectives and develop empathy in a supportive environment. The teacher librarian plays an important role in creating these meaningful learning experiences by intentionally using library activities to strengthen both literacy and the personal and social development of every learner.
+By consistently implementing the activities in this chapter, the teacher librarian creates a strong foundation for learners to participate successfully in SAL's literacy programs, improve learning outcomes and develop a lifelong love for reading."
+sal-62de70a6e5dc,sal-teacher-librarian-guide,SAL Flagship Reading Programs,Chapter 3: Bringing Books to Life,3.1.1,sal_programs,flagship programs | National Read Aloud | book clubs,guidance,en,14,15,1,1,96,684,embedded_pdf_text,"➢ 3.1.1 Flagship programs
+The literacy activities in this chapter form the foundation of SAL's reading programs and should be implemented regularly throughout the school year. Weekly library activities and bi-monthly book clubs sessions help learners build the skills and confidence they need to participate in larger annual literacy initiatives such as;
+These programs provide learners with opportunities to apply their reading, communication, creativity and critical thinking skills in fun, engaging and collaborative ways. They also strengthen learners' confidence, empathy, teamwork and resilience by encouraging them to share ideas, express themselves and learn from one another."
+sal-812b2f9ac8be,sal-teacher-librarian-guide,Principles for Conducting Reading Activities,Chapter 3: Bringing Books to Life,3.2,activity_facilitation,participation | inclusion | learner ability | facilitation,guidance,en,15,16,1,1,144,1039,embedded_pdf_text,"3.2 Principles for Conducting Reading Activities Before conducting any activity, the teacher librarian should keep in mind the following principles:
+a) Make reading enjoyable: - Library sessions should feel different from normal classroom
+lessons. They should be fun, relaxed, and participatory so that learners associate reading with enjoyment.
+b) Encourage active participation: - Learners should not only listen but also talk, read,
+ask questions, act, draw, predict, and share ideas.
+c) Consider learner ability levels: - Some learners read fluently while others struggle.
+Activities should be adjusted to allow participation by all learners.
+d) Use available materials creatively; -Books, flashcards, pictures, games, locally made
+materials, and learner-created resources can all support literacy activities.
+e) Keep sessions short and engaging: - Children lose concentration when sessions are too
+long. Activities should be lively and well-paced.
+Key Learning skills *Listening carefully *Observing *Speaking *Doing *Reading *Writing"
+sal-0cd26b10351e,sal-teacher-librarian-guide,Integrating Life Skills and Values into Reading,Chapter 3: Bringing Books to Life,3.3,life_skills_and_values,life skills | values | reflection questions | social-emotional learning,guidance,en,16,17,1,1,219,1607,embedded_pdf_text,"3.3 Life Skills & Values Integration in Reading Activities Teacher-librarians should intentionally connect reading activities to learner’s everyday lives.
+During reading activities such as Q&A, role paly, storytelling etc., facilitators should guide learners to reflect on:
+❖ decision making;
+❖ communication;
+❖ teamwork;
+❖ problem solving;
+❖ leadership;
+❖ self-awareness;
+❖ empathy and
+kindness;
+❖ confidence and
+self-expression;
+❖ respect for
+others;
+❖ responsibility and
+honesty.
+Sample life skill reflection Questions
+✓ What lesson did you learn from the story?
+✓ Was the character decision right or wrong? Why?
+✓ What would you do differently?
+✓ How did the character show kindness, honesty or courage?
+✓ What challenges did the character face and how were they solved?
+✓ What can we learn from this story in our daily lives?
+✓ How can we apply this lesson at home or at school?
+Literacy Activity Life Skills Developed Values Promoted Read Aloud Listening, communication, imagination Respect, empathy Storytelling Confidence, creativity, self-expression Honesty, courage Book discussion Critical thinking, decision making, Leadership, collaboration Tolerance, responsibility Spelling bee Confidence, listening, problem solving Respect, courage, discipline Debates Public speaking, critical thinking, leadership Respect for different opinions Role play Problem solving, communication Teamwork, confidence Story building Teamwork, listening, Leadership, collaboration Respect Anagram (word building) Problem solving, Critical thinking, team work Respect, accountability, discipline 3.4 READING ACTIVITIES"
+sal-3c6525df731f,sal-teacher-librarian-guide,Reading Activity: Read Aloud,Chapter 3: Bringing Books to Life,3.4.a,read_aloud,read aloud | fluency | pronunciation | comprehension,activity_guide,en,17,17,1,1,346,2185,embedded_pdf_text,"a) Read Aloud
+This is a shared reading activity where all learners read the same text aloud at the same time.
+Learning objective:
+◊ helps learners improve reading fluency, pronunciation, expression, confidence, and
+comprehension while creating an enjoyable and inclusive reading experience.
+◊ Develop learners’ interest in reading and understanding of stories by engaging them
+in interactive discussions and vocabulary learning.
+Materials
+• A common storybook or text (one copy per learner or shared copies)
+• Reading journals or notebooks (optional)
+Process
+a) Learners recite the reading
+pledge to set the tone for the session.
+b) Select an age-appropriate and interesting story.
+c) Show learners the cover and ask prediction questions on
+what the story might be about.
+d) All learners read the same text aloud together at the same
+pace, guided by the teacher librarian.
+e) Pause occasionally to explain unfamiliar words, check
+understanding, or model expression where necessary.
+Allow learners to predict what may happen next and continue reading.
+f) Facilitate a discussion using questions such as: What
+happened in the story? Who were the main characters?
+What lesson did you learn? How did the story make you feel? What would you have done differently?
+g) Summarize the key message of the story and encourage
+learners to borrow the book or read another book by the same author.
+N/B: How this links to the National Read Aloud:
+Regular classroom and library Read Aloud sessions prepare learners to participate confidently in SAL's annual National Read Aloud event, where schools across the country read the same text/excerpt at the same time in multiple locations and engage in discussions on the selected theme of the year.
+Facilitator tips
+✔ Select a book that is
+appropriate for the learner’s age and reading level.
+✔ Ensure every learner can
+access the book being read.
+✔ Encourage learners to
+read clearly and with expression.
+✔ Pause occasionally to
+explain new vocabulary and check comprehension.
+✔ Create a supportive
+environment where every learner feels comfortable participating.
+✔ Allow mixed participation
+not only top learners
+✔ Use pronunciation +
+meaning + spelling"
+sal-6e21d3af7925,sal-teacher-librarian-guide,Reading Activity: Storytelling and Story Narration,Chapter 3: Bringing Books to Life,3.4.b,storytelling,storytelling | oral language | retelling | reluctant readers,activity_guide,en,18,18,1,1,151,1052,embedded_pdf_text,"b) Storytelling / Story Narration
+Storytelling allows the facilitator or learners to narrate stories orally with energy, gestures and interaction. Stories may come from books, folktales or real events and should be relevant and age/grade appropriate.
+Learning objectives:
+◊ Develop learners’ listening, speaking, and comprehension skills through active
+participation in storytelling activities.
+◊ Enhance learners’ creativity, imagination, and confidence in self-expression through
+retelling and discussing stories.
+Process
+a) Learners recite the reading pledge to set the tone for the session.
+b) The facilitator will begin by narrating a story using simple and clear language and
+gestures.
+c) Involve learners in repeating words and phrases
+d) After narrating, ask learners if they enjoyed your story
+e) Ask simple comprehension and follow up questions
+f) Invite 2 -3 learners to narrate their own stories
+N/B: Storytelling is especially effective for younger learners and reluctant readers because it builds oral language before independent reading."
+sal-55a120dd31c5,sal-teacher-librarian-guide,Reading Activity: Spelling Bee,Chapter 3: Bringing Books to Life,3.4.c,spelling_bee,spelling | vocabulary | competition | confidence,activity_guide,en,18,19,1,1,344,2043,embedded_pdf_text,"c) Spelling Bee
+The spelling bee entails the spelling of specific words.
+Learning objectives
+◊ Improve learners’ spelling and vocabulary skills through accurate word recognition
+and spelling practice.
+◊ Build learners’ confidence in oral communication and participation through active
+engagement.
+Process
+a) The facilitator selects words according to
+learners reading level/ grade appropriate before the session.
+b) Welcome learners, recite the reading pledge and ask a few
+easy oral spelling questions to warm them up.
+c) Facilitator divides the learners into competing groups.
+d) Explain rules for the sessions so that learners know what to
+do. E.g.
+Listen carefully.
+You may ask the word to be repeated once.
+No shouting answers from the audience.
+Be respectful when others are spelling.
+We clap for everyone.
+e) When called, the learner comes to the front.
+f) Facilitator pronounces the word.
+g) Facilitator may use it in a sentence.
+h) Learner repeats the word.
+i) Learner spells aloud letter by letter.
+j) Learner repeats the full word again.
+k) Ask learners to write same word in their books / spell it in the air
+l) If a word is spelt wrongly, give other learners chance to correct and ask learners to
+repeat together.
+m) After the session celebrate all learners and finish with a quick recap.
+❖ Which words were difficult?
+❖ Which silent letters did we learn?
+❖ Which new words did we hear today?
+N/B: This activity can be facilitated in the following ways:
+Option A: individual oral turn This is best for small group (10–20 learners) where one learner spells at a time.
+Option B: Team spelling bee: best for large groups Divide learners into pairs or teams of 5-7 depending on class size. Each group discusses then gives one spelling Facilitator tips
+✔ Start with easy words to
+moderate to difficult words
+✔ Keep it lively and fast
+paced
+✔ Use applause and
+encouragement
+✔ Do not shame wrong
+answers
+✔ Turn every mistake into a
+teaching point
+✔ Allow mixed participation
+not only top learners
+✔ Use pronunciation +
+meaning + spelling"
+sal-b927848e16cc,sal-teacher-librarian-guide,Reading Activity: Debate,Chapter 3: Bringing Books to Life,3.4.d,debate,debate | critical thinking | public speaking | respect,activity_guide,en,20,20,1,1,323,2110,embedded_pdf_text,"d) Debate
+A debate session is an interactive learning activity that allows learners to express opinions, think critically, improve communication skills and build confidence while discussing a topic from different points of view.
+Learning objectives
+◊ Enhance learners’ communication and critical thinking skills through expressing and
+defending ideas during discussions.
+◊ Build learners’ confidence, teamwork, problem solving and listening skills through
+active participation in structured debates.
+Process
+a) Learners recite the reading pledge to set the tone for
+the session.
+b) The teacher librarian selects an appropriate debate topic that matches learners age
+and understanding, simple and relatable, and encourages discussion.
+c) Divide the class into two groups; the opposing and proposing team.
+d) Arrange learning space so learners face each other and can hear clearly.
+e) Allow groups time to discuss in groups to gather points and
+select speakers.
+f) 3-5 speakers per side is manageable (depending on class size)
+g) Explain the rules clearly
+One speaker talks at a time, Respect for different opinions, No shouting or interrupting, Speakers should give reasons for their points, Audience should listen carefully Time limits for speaking
+h) An independent judge and a timekeeper are selected.
+i) Begin the debate session
+j) Facilitator reads motion clearly
+k) Opening statements from each side explaining why they
+disagree with or support the motion.
+l) Learners present argument one by one.
+m) After arguments, team may respond to point raised by the other side.
+n) Learners in audience join in the discussion
+At the end of the debate, the judge makes a ruling on the team with more valid points.
+Conclude by summarizing key ideas, highlight strong arguments, correct misinformation and appreciate both teams.
+Facilitator tips
+✔ Choose simple and relatable
+topics
+✔ Encourage equal
+participation of boys and girls
+✔ Support shy learners
+✔ Focus on confidence and
+communication skills
+✔ Teach learners to disagree
+respectfully.
+✔ Maintain a friendly
+environment
+✔ Appreciate effort, not only
+winning"
+sal-8e4dec06aa41,sal-teacher-librarian-guide,Reading Activity: Dramatization and Role Play,Chapter 3: Bringing Books to Life,3.4.e,dramatization_and_role_play,role play | dramatization | creativity | teamwork,activity_guide,en,21,21,1,1,243,1612,embedded_pdf_text,"e) Dramatization / Role Play.
+This involves acting out a story. Learners read a story and thereafter, pick a character from the storyline to imitate.
+Learning Objectives:
+◊ Enhance learners’ communication and comprehension skills through active
+participation in role play and dramatization activities.
+◊ Build learners’ confidence, creativity, and teamwork skills through acting and
+collaborative performance.
+Process
+a) Learners recite the reading pledge to set the tone for the session.
+b) Choose a short, simple and age / grade -appropriate story or scenario.
+c) Read / narrate the story before acting begins
+d) Identify character, setting, major events and important dialogue.
+e) Select participants – Learners can volunteer or the teacher assigns the roles. The
+teacher should not assign roles based on student suggestion, as that could put a student in an uncomfortable situation, or stereotype the student.
+f) Give learners time to practice. During practice, guide learners on pronunciation,
+expression, movement and help them remember sequence of events. Do not over-correct.
+Focus on confidence and participation.
+g) Prepare acting space using simple locally available materials that can be used as
+props.
+h) Learners perform. Here the facilitator should guide the flow, maintain order and
+ensure all learners are respected.
+i) Reflection and discussion of the performance
+What happened in the story?
+What lesson did we learn?
+Which part was enjoyable?
+What challenges did learners face?
+Link story to real life situation
+j) Appreciate and encourage all learners and avoid criticizing mistakes publicly."
+sal-2231c5f88fbd,sal-teacher-librarian-guide,Reading Activity: Story Building,Chapter 3: Bringing Books to Life,3.4.f,story_building,story building | sequencing | imagination | collaboration,activity_guide,en,21,22,1,1,367,2079,embedded_pdf_text,"f) Story Building
+This is an interactive, collaborative learning exercise where learners take turns adding one sentence to build a story, often starting with a prompt like, “once a upon a time…” Learning Objectives:
+◊ To enhance learners’ imagination and creativity to create stories.
+◊ To help learners in sentence construction, comprehension and sequencing the
+events in a story.
+Process
+a) Learners recite the reading pledge to set the tone for the session.
+b) Have the learners stand in a circle / sit in a circle, either on the floor or around a
+table to encourage listening.
+c) Explain the rules clearly i.e., learners to follow the same tense and sequence of
+events to build the story.
+d) The facilitator begins the story with an opening sentence or prompt e.g., “once a
+upon a time…”
+e) Moving in a circle, each learner contributes one sentence that connects to the
+previous one.
+f) The last person in the circle (or a final designated person) ends the story.
+g) The facilitator will ask a learner to re-tell the story in their own words, whatever
+she/he remembers.
+h) If the story is not in sequence, then the facilitator will ask another learner to re-tell
+the story again in a proper sequence.
+i) The facilitator will reflect on their story
+– does it make sense?
+– Is it interesting?
+– Is it in sequence i.e., does it have a beginning, a middle and an end?
+j) Then the facilitator will divide learners into groups of 8 to 10 learners each, and each
+group to choose a group leader for the activity.
+k) Ask groups to follow all the above steps and build their own stories.
+l) A volunteer from each group re-tells their story to the rest of the class one by one.
+m) Discussion on each group story. The story should have a beginning, gradually grow a
+climax/ body and have a strong ending.
+Facilitator Tips
+✓ Choose simple stories
+✓ Encourage all learners to participate
+✓ Focus on learning, not perfection
+✓ Support shy learners gently
+✓ Use simple language
+✓ Make the activity fun and interactive
+✓ Connect lessons to learners’ daily
+lives
+✓ Promote respect and teamwork"
+sal-f61852a36dc8,sal-teacher-librarian-guide,Reading Activity: Anagram and Word Building,Chapter 3: Bringing Books to Life,3.4.g,anagram_word_building,anagram | word building | vocabulary | spelling,activity_guide,en,23,23,1,1,260,1626,embedded_pdf_text,"g) Anagram (Word Building)
+This is an activity where learners use letters from a given word to create as many new words as possible.
+Learning Objectives:
+◊ Improve learners’ vocabulary and spelling skills through forming new words from
+given letters.
+◊ Enhance learners’ critical thinking, creativity and confidence skills through interactive
+word-building activities.
+Process
+a) Learners recite the reading pledge to set the tone for the session
+b) The facilitator selects an appropriate base word that matches learners’ level,
+contains enough letters and can generate several simple words.
+c) Write the main word clearly where all learners can see it.
+d) The facilitator to demonstrate 2-3 simple examples together with the class to help
+learners understand what they are expected to do.
+e) Depending on class size, learners can form words independently, in pairs or in
+groups.
+f) As learners form words, the facilitators move around to support struggling learners
+and ensure instructions are followed.
+g) The teacher writes down all the words as shared by the class or group leaders
+present their words.
+h) The class collectively goes through the list to marks the correct words
+i) Discussions
+– Which words are new?
+– What do they mean?
+– Can learners use the words in sentences?
+j) Appreciate and recognize effort of each learner.
+Facilitator Tips
+✔ Start with simple words
+for younger learners
+✔ Encourage teamwork and
+participation
+✔ Focus on learning, not
+competition only
+✔ Support slow learners
+with hints
+✔ Use praise and
+encouragement
+✔ Introduce new
+vocabulary naturally
+✔ Make the activity lively
+and interactive"
+sal-009755b5d573,sal-teacher-librarian-guide,Book Club Session Guide and Structure (Part 1 of 2),Chapter 3: Bringing Books to Life,3.4.h,book_clubs,book club | discussion questions | reading ambassadors | session structure,activity_guide,en,24,26,1,2,611,3580,embedded_pdf_text,"h) Book Club Session Guide and Structure Introduction to a Book Club Session A book club is a structured reading activity where learners come together to read, discuss and share ideas about books in a fun and interactive environment. Book clubs help learners develop reading fluency, comprehension, confidence, communication, teamwork, creativity and critical thinking skills. Unlike formal classroom lessons, book club sessions should be learner-centered, relaxed, enjoyable, and discussion-based. The goal is to help children develop a positive attitude toward reading while strengthening literacy and social skills. Book club can be organized weekly, bi-weekly or monthly depending on the school schedule and availability of books. A manageable book club may consist of 10-30 learners depending on space and facilitation ability. Where numbers are large learners can be divided into smaller discussion groups. Guidelines of SAL Book club ✓ Girl led mixed gender book club. ✓ Members: 60 learners per school randomly selected from (Grades 5 to JSS) ✓ Meet twice a month when school is in session with trained community and corporate mentors (reading ambassadors). ✓ The teacher librarian is the club patron. ✓ Duration: 45 mins – 1 hour ✓ The session can be conducted by the teacher, reading ambassador or reading champions Rules of a Book club ❖ Urge all learners to participate. ❖ No right or wrong answers Learning objectives ◊ To encourage learners to read regularly for enjoyment, learning, and personal growth. ◊ To help learners strengthen reading fluency, comprehension, vocabulary, speaking, listening, and critical thinking skills through interactive reading and discussion activities. Process of conducting a book club Before the day of the session, the facilitator should inform the book club member of the title of storybook that will be discussed and encourage them to read. On the day of the activity; a) Welcome learners to the session and introduce the facilitator for the day i.e reading ambassador/ Junior reading champion. b) Recite the reading pledge to set the tone for the session c) Remind learners of rules and expectations d) Introduce the book to be discussed that day and cross check if learners have read. e) Invite 2 learners to give summary of the book f) Discuss the book in detail using the following guiding questions – What was the book about? – Who are the characters? Describe them and their actions? – Which character would you most like to be in this book? Why? – What is your most favorite part of the book and least favorite? – How did this book make you feel at the end? – If you could only tell people about one moment in this book, what would it be? – What do you know now that you didn’t before reading this book? – What new words did you learn from the book and what is the meaning to those words? – If the book has child characters, what kind of people do you think they would be as grown-ups? – Were you convinced by the story? Did it feel real? – If one of the characters could turn up at your school – as a new child or a teacher – which character, would you pick and why? g) Let learners construct simple sentences using the new words they have learned from the book. h) Conclude the session by summarizing key points learnt linking them to real life scenarios and lessons learnt. i) Inform learners of the title that will be discussed in the next book club session and where to access the storybooks. Or learners can vote on the next book to be discussed. j) Vote of thanks from a learner and recitation of the Reading Pledge."
+sal-5dc0bd3c6845,sal-teacher-librarian-guide,Book Club Session Guide and Structure (Part 2 of 2),Chapter 3: Bringing Books to Life,3.4.h,book_clubs,book club | discussion questions | reading ambassadors | session structure,activity_guide,en,24,26,2,2,141,887,embedded_pdf_text,they have learned from the book. h) Conclude the session by summarizing key points learnt linking them to real life scenarios and lessons learnt. i) Inform learners of the title that will be discussed in the next book club session and where to access the storybooks. Or learners can vote on the next book to be discussed. j) Vote of thanks from a learner and recitation of the Reading Pledge. Common Challenges and Possible Solutions Below are some of the challenges faced during a book club session and how they can be addressed Challenge Possible Solution Few books available Use group reading or read aloud Low learner participation Use games and interactive activities Mixed reading abilities Pair strong and struggling readers Learner’s fear reading aloud Encourage without forcing participation Limited time Use shorter focused activities Book damage/loss Reinforce book care rules
+sal-cfc8e16d8e15,sal-teacher-librarian-guide,Building a School-Wide Reading Culture,Chapter 4: Reading Culture and Stakeholder Engagement,4.1,reading_culture,reading culture | whole school | stakeholders,guidance,en,27,27,1,1,92,649,embedded_pdf_text,"4.1 Introduction A strong reading culture cannot be built by the teacher librarian alone. For literacy programs to succeed, the entire school community must support and participate in reading activities. This includes school leadership, teachers, learners, parents and other education stakeholders. When reading becomes part of the school culture, learners begin to see reading not as punishment or examination work, but as a normal, enjoyable and valuable part of everyday life.
+This chapter provides practical strategies for promoting a reading culture and strengthening collaboration among stakeholders to support library and literacy activities."
+sal-78a63dc9fe6c,sal-teacher-librarian-guide,Understanding a Reading Culture,Chapter 4: Reading Culture and Stakeholder Engagement,4.2,reading_culture,reading habits | voluntary reading | school culture,guidance,en,27,27,1,1,80,550,embedded_pdf_text,"4.2 Understanding a Reading Culture A reading culture exists when reading becomes a regular habit and is valued by learners, teachers, parents and the wider school community.
+In schools with a strong reading culture:
+• Learners read voluntarily and regularly
+• Books are visible and actively used
+• Teachers encourage reading beyond examinations
+• Reading activities happen consistently
+• School leadership supports library programs
+• Parents appreciate the importance of reading
+Building a reading culture takes time, consistency, and collaboration."
+sal-af68894b69f8,sal-teacher-librarian-guide,Role of School Leadership,Chapter 4: Reading Culture and Stakeholder Engagement,4.3,school_leadership,headteacher | school administration | timetable | resources,guidance,en,27,28,1,1,110,778,embedded_pdf_text,"4.3 The Role of School Leadership The support of the headteacher and school administration is critical for the success and sustainability of the library program. Strong school leadership support increases accountability and visibility of the library within the school.
+School leadership can support by:
+• Allocating time for library activities in the school timetable
+• Encouraging teachers to use library resources
+• Supporting proper care and security of books
+• Mobilizing resources for the library
+• Recognizing and appreciating active readers and teacher librarians
+• Participating in literacy events as organized
+N/B: The teacher librarian should regularly update school leadership on library activities, learner participation, achievements, challenges and resource needs."
+sal-55baf3ef2475,sal-teacher-librarian-guide,Involving Classroom Teachers,Chapter 4: Reading Culture and Stakeholder Engagement,4.4,teacher_engagement,classroom teachers | curriculum integration | struggling readers,guidance,en,28,28,1,1,108,764,embedded_pdf_text,"4.4 Involving Classroom Teachers A reading culture becomes stronger when all teachers participate, not only language teachers.
+Teachers from all subjects can support the library program by:
+• Encouraging learners to borrow and read books
+• Integrating storybooks and library materials into lessons
+• Allowing time for reading activities
+• Participating in reading competitions and other literacy events
+• Referring struggling readers for additional support
+The teacher librarian should work collaboratively with teachers by:
+• Sharing available library resources
+• Planning joint reading activities
+• Recommending relevant books
+• Encouraging regular class library visits
+N/B: When teachers model positive reading habits, learners are more likely to value reading."
+sal-7ba26318b35a,sal-teacher-librarian-guide,"Junior Reading Champions: Selection, Duties and Transition",Chapter 4: Reading Culture and Stakeholder Engagement,4.5,learner_leadership,Junior Reading Champions | library prefects | selection | onboarding | handover,guidance,en,28,30,1,1,578,4010,embedded_pdf_text,"4.5 Learner Participation and Leadership - Junior Reading Champions (Library Prefects) Learner participation is an important part of SAL's sustainability model, ensuring that they take ownership of the library and that reading activities continue beyond the support of individual teachers. In SAL schools, learner leaders who support library activities are known as Junior reading Champions.
+This aims to develop learner leadership while promoting a strong reading culture within the school. It empowers learners to take an active role in supporting library activities, encouraging their peers to read, and serving as positive role models.
+Selection Criteria Junior Reading champions should be selected through a transparent process led by the teacher librarian and school leadership.
+When selecting learners, consider those who demonstrate:
+• An interest in reading and books.
+• Good behavior and responsibility.
+• Reliability and punctuality.
+• Respect for others.
+• Willingness to help fellow learners.
+• Good communication skills.
+• Leadership potential.
+Where possible:
+• Select a boy and a girl from each grade 4-9 to promote gender balance.
+• Ensure representation of learners with different abilities and backgrounds.
+• Give opportunities to learners who show commitment, even if they are still
+developing their reading skills.
+Onboarding process Once selected, Library Prefects should receive a simple orientation covering:
+• The purpose of the school library.
+• Their roles and responsibilities.
+• Library rules and procedures.
+• Book care and handling.
+• Borrowing and return procedures.
+• Leadership and communication skills.
+• Child safeguarding and respectful behaviour.
+• How to support younger learners during reading activities.
+The teacher librarian should provide ongoing coaching throughout the year.
+Roles and Responsibilities Library Prefects should;
+• Organize books and learning materials.
+• Help maintain a clean and orderly library.
+• Encourage classmates to borrow and read books.
+• Support younger learners during reading sessions.
+• Assist during library/maktaba sessions and book clubs.
+• Help promote school reading campaigns and literacy events.
+• Encourage responsible use and care of library resources.
+• Report damaged or missing books to the teacher librarian.
+• Model positive reading habits and good leadership.
+• Promote peer learning by reading with younger learners, helping struggling readers
+select books, leading small groups, supporting book discussions, etc By involving learners as Library Prefects, schools build leadership, responsibility, teamwork, and confidence while creating a sustainable library program that is owned and supported by the learners themselves.
+Recognition and motivation School should recognize the contribution of Junior Reading Champions to encourage continued commitment through;
+- certificates of service, badges /name tags, recognition during assemblies, end of year
+awards etc.
+Exit & Transition To ensure continuity, Library Prefects should serve for a defined period, preferably one academic year. At the end of their term, the teacher librarian should facilitate a structured transition to the next group of library prefect/ Junior Reading Champions.
+The transition process should include:
+• Reviewing the achievements and lessons learned during their term of service.
+• Identifying and selecting new Library Prefects using the agreed selection criteria.
+• Conducting a handover meeting between outgoing and incoming Library Prefects.
+• Orienting the new Library Prefects on their roles, responsibilities, and library
+procedures.
+• Transferring any library materials, records, badges, or leadership resources to the
+incoming team.
+• Recognizing and appreciating the service of outgoing Library Prefects during a school
+assembly, prize-giving day, or other school event.
+Schools are encouraged to recognize outgoing Library Prefects for their service and encourage them to continue serving as reading ambassadors within the school."
+sal-b5d6ebe76bc6,sal-teacher-librarian-guide,Organizing School Reading Activities and Events,Chapter 4: Reading Culture and Stakeholder Engagement,4.6,reading_events,reading competitions | reading challenges | guest readers | literacy displays,guidance,en,30,31,1,1,132,953,embedded_pdf_text,"4.6 Organizing School Reading Activities and Events Regular literacy events help create excitement around reading and increase learner participation.
+The teacher-librarian can organize various reading events such as:
+a) Reading competitions among classes e.g. spelling bee competition, poetry recitation,
+reading aloud competitions, inter-class debates and storytelling contests.
+b) Book Clubs: Small learner groups that meet regularly to read and discuss books.
+c) Reading Challenges: Learners are encouraged to read a certain number of books
+within a given period.
+d) Guest reader sessions (Reading ambassadors): Parents, alumni or community
+members visit the school to read stories to learners and discuss books.
+e) Literacy displays: Display learner book reviews, best compositions, drawings, poems,
+vocabulary walls and reading achievement charts on library/ classroom walls to help make reading visible, exciting and appreciated within the school."
+sal-532415a06e70,sal-teacher-librarian-guide,Parent and Caregiver Engagement,Chapter 4: Reading Culture and Stakeholder Engagement,4.7,parental_engagement,parents | caregivers | Kusoma Bags | reading at home,guidance,en,31,31,1,1,223,1510,embedded_pdf_text,"4.7 Parental Engagement Parents and community members are important partners in helping children develop strong literacy, life skills, and a lifelong love for reading. To strengthen the connection between school and home, SAL implements interactive parent workshops that equip parents and caregivers with simple, practical ways to support children's reading at home. Through the use of Kusoma Bags, learners have more opportunities to practice reading, build confidence, and enjoy books beyond the classroom. Parents and caregivers can support literacy skills acquisition by:
+• Setting aside time for reading at home.
+• Listening to children read or tell stories.
+• Asking children about the books they are reading and praising their reading efforts.
+• Supporting children to borrow, care for and return library books.
+• Buying more books for their children
+The teacher librarian should actively engage parents and the wider school community through:
+• Interactive parent workshops that demonstrate simple ways to support reading
+and storytelling at home.
+• Reading diaries that encourage parents to monitor and celebrate their children's
+reading.
+• School literacy events such as read-aloud sessions, storytelling days, book
+exhibitions, and reading celebrations that bring families together.
+• Parent and community reading volunteers who support library activities and
+promote a culture of reading.
+• Regular communication with parents on learners' reading progress and ways
+they can provide support at home."
+sal-4a2b64bf553d,sal-teacher-librarian-guide,Partnerships and Community Support,Chapter 4: Reading Culture and Stakeholder Engagement,4.8,community_partnerships,community partners | donations | mentors | Pen Pal Program,guidance,en,31,32,1,1,203,1485,embedded_pdf_text,"4.8 Creating Partnerships and Community Support Strong partnerships help schools create richer learning opportunities for learners and strengthen the impact of library and literacy programs. The teacher librarian should work closely with the school leadership to identify and engage partners who can support reading, learning, and learner development.
+Potential partners include:
+• Parents and caregivers
+• Community leaders
+• Alumni
+• Local organizations and NGOs
+• Publishers and authors
+• Volunteers
+• Corporate mentors
+• Education stakeholders
+• Local and international schools
+Partnerships can support the school library through:
+• Book and resource donation
+• Reading mentorship and career
+talks
+• Literacy events and reading
+campaigns
+• Technical support and capacity
+building
+• Resource mobilization
+• Volunteer support for library
+activities
+• Cultural exchange and
+collaborative learning opportunities At SAL, we have the Pen Pal Program, which connects learners with children in local and international schools to exchange letters, share reading experiences and learn about different cultures. The program strengthens communication, literacy, global awareness, and appreciation of diversity while helping learners build meaningful connections beyond their own communities.
+Strong partnerships help create a supportive learning ecosystem where schools, families, communities, and organizations work together to improve children's literacy, life skills, and lifelong learning."
+sal-86a0c4174274,sal-teacher-librarian-guide,Challenges and Responses in Promoting Reading Culture,Chapter 4: Reading Culture and Stakeholder Engagement,4.9,reading_culture_challenges,low learner interest | teacher involvement | parent support | limited materials,guidance,en,32,33,1,1,88,681,embedded_pdf_text,"4.9 Addressing Common Challenges in Promoting Reading Culture Teacher librarians may face several challenges when promoting library use and reading activities in their school.
+Challenge Possible Response Low learner interest in reading Introduce fun and interactive activities Limited teacher involvement Conduct sensitization and collaborative planning Limited reading materials Rotate books and use locally available materials creatively Poor care of books Teach proper book handling and reinforce library rules Competing school priorities Integrate short reading sessions into existing programs Low parental support Increase awareness through parent’s meetings and communication"
+sal-514a286b4702,sal-teacher-librarian-guide,"Monitoring, Reporting and Continuous Improvement",Chapter 5: Monitoring and Sustainability,5.1,monitoring_and_evaluation,monitoring | reporting | continuous improvement | EGRA,guidance,en,34,34,1,1,110,901,embedded_pdf_text,"5.1 Introduction Monitoring and reporting help ensure that the school library contributes to improved learning outcomes. Teacher librarians should track not only library use, but also learners’ literacy progress, participation, life skills and social-emotional development. Library records, together with EGRA-aligned assessments where applicable, provide evidence for identifying learner needs, measuring progress, informing decisions and strengthening library and literacy programs.
+This information enables schools and SAL to identify learners who need additional support, measure program effectiveness, and make evidence-informed decisions to strengthen foundational learning.
+This chapter provides practical guidance on maintaining library records, monitoring learner participation and progress, reporting key information, and using evidence to continuously improve library and literacy programs."
+sal-56fded8f72bc,sal-teacher-librarian-guide,Why Monitoring and Reporting Matter,Chapter 5: Monitoring and Sustainability,5.2,monitoring_and_evaluation,participation | borrowing trends | accountability | decision-making,guidance,en,34,34,1,1,83,616,embedded_pdf_text,"5.2 Why Monitoring and Reporting Matter Monitoring helps the teacher librarian to:
+❖ Track learner participation in library activities
+❖ Understand borrowing and reading trends
+❖ Identify active and struggling readers
+❖ Monitor the condition and use of books
+❖ Assess whether literacy activities are effective
+❖ Identify challenges affecting library operations
+❖ Provide accountability for library resources
+Reporting helps school leadership and supporting partners understand library progress, support decision-making and planning, highlight achievements and challenges and mobilize support for the library program."
+sal-2927303d7572,sal-teacher-librarian-guide,Key Areas and Indicators to Monitor,Chapter 5: Monitoring and Sustainability,5.3,monitoring_indicators,library use | literacy skills | life skills | library quality,guidance,en,35,35,1,1,64,534,embedded_pdf_text,"5.3 Key Areas to Monitor The teacher librarian should regularly monitor the following areas:
+AREA EXAMPLES Library use Visits, book borrowing, book returns Learner participation Attendance at book clubs and maktaba/library sessions Literacy skills Reading fluency, comprehension, vocabulary, writing (using SAL's EGRA-aligned assessment tools) Life skills & social- emotional competencies Confidence, communication, collaboration, empathy, leadership, resilience Library quality Book condition, organization, availability of resources"
+sal-0444c4a533c9,sal-teacher-librarian-guide,Sustaining the School Library Program,Chapter 5: Monitoring and Sustainability,5.4,program_sustainability,school ownership | continuity | resources | community support,guidance,en,35,35,1,1,187,1279,embedded_pdf_text,"5.4 Sustainability of the School Library Program School ownership and active leadership are essential for sustaining a school library. In the SAL model, trained government employed teachers manage the library and lead literacy activities. This strengthens the school’s capacity and supports the continuity of the library services beyond SAL’s direct involvement.
+To sustain the school library program, schools should:
+• Integrate library activities into the school timetable.
+• Ensure library sessions are regular and well planned.
+• Support the designated teacher librarian to lead literacy activities.
+• Involve other teachers in promoting reading and using library resources.
+• Train additional teachers to support library management and continuity.
+• Empower Library Prefects to take active leadership roles.
+• Maintain accurate library records and effective management systems.
+• Care for books, furniture, and other learning materials.
+• Engage parents, the Board of Management and the wider community in supporting
+library activities.
+• Allocate school resources, where possible, to maintain and improve the library.
+A sustainable school library is one that is owned by the school, supported by its teachers, embraced by learners, and valued by the wider school community."
+sal-2b7632e320b8,sal-teacher-librarian-guide,Template: Book Inventory Register,Appendix,A1,record_templates,inventory register | stocktaking | template,template,en,37,37,1,1,38,224,embedded_pdf_text,"Appendix 1: Book Inventory Register Used to record all books available in the library.
+Item no Date Tittle Grade Level Subject Author Quantity Remarks 1 08/05/2025 The cunning tortoise 3 English Xx yyy 20 Donated by parent 2"
+sal-642fe4459bd8,sal-teacher-librarian-guide,Template: Borrowing and Returning Register,Appendix,A2,record_templates,borrowing register | returns | template,template,en,37,37,1,1,53,327,embedded_pdf_text,"Appendix 2: Borrowing and Returning Register Used to track books borrowed by learners.
+It helps improve accountability and monitor reading habits.
+Learner name Grade Book Tittle Book no Date borrowed Date returned Condition of the book Sign Juma Baraka 3 The crazy hare SAL / Donor/SCH/ 0102/ C2 05/05/2024 15/05/2024 Good J. B"
+sal-7444d25d4c4b,sal-teacher-librarian-guide,Template: Library Attendance Register,Appendix,A3,record_templates,attendance register | library visits | template,template,en,37,37,1,1,41,211,embedded_pdf_text,"Appendix 3: Library Attendance Register Used to record learners visiting the library daily or weekly Date Grade Boys Girls Total Activity Conducted 12/08/2025 5 25 20 45 Anagram challenge
+- - - - - -
+- - - - - -"
+sal-e8f2b704ad71,sal-teacher-librarian-guide,Template: Reading Diary or Shajara,Appendix,A4,learner_reading_records,reading diary | Shajara | reflection | new vocabulary,template,en,38,38,1,1,39,249,embedded_pdf_text,"Appendix 4: Sample Reading Diary/ Shajara A book diary helps learners track, reflect on, and develop consistent reading habits.
+Book title Author Summary of the story New words learnt and meaning:
+Construct three sentences using the new words learnt"
+sal-062638eea94c,sal-teacher-librarian-guide,Book Care and Repair Tips,Appendix,A5,book_care_and_repair,book repair | torn pages | spine repair,procedure,en,38,38,1,1,83,434,embedded_pdf_text,"Appendix 5: Book Care and Repair Tips Book repair Torn books should be repaired before they become completely outdated.
+Resources required
+- Masking tape of dark tape
+- Glue
+- Glue stick
+Procedure Identify the torn part of the books.
+If it’s the spine, apply glue on it and leave for 30 seconds to dry then cover with permanent dark tape.
+If it’s the pages, apply a thin layer of glue on the torn apart and leave it to dry for 5 mins."
+sal-1f318c4d641e,sal-teacher-librarian-guide,Template: One-Hour Book Club Session Plan,Appendix,A6,session_plans,book club | one-hour plan | discussion | creative activity,template,en,39,39,1,1,107,641,embedded_pdf_text,"Appendix 6: Book club session plan – 1 hour Activity Time What to Do Opening and Welcome 5 mins - Welcome learners.
+- Recite the Reading Pledge.
+- Conduct a short energizer if necessary.
+Introduction to the Book 10 mins - Introduce the title and author.
+- Remind learners of book club rules.
+- Invite 1–2 learners to summarize the story.
+- Form groups where necessary.
+Reading and Discussion 25 mins Guide learners using simple discussion questions.
+Creative Activity 10 mins Conduct a fun follow-up activity related to the story.
+Reflection and Closing 10 mins Learners share feedback and session ends with final remarks and Reading Pledge."
+sal-8076d5ceae57,sal-teacher-librarian-guide,Template: 35-Minute Library Reading Activity Plan,Appendix,A7,session_plans,reading pledge | 35-minute plan | literacy activity,template,en,39,39,1,1,101,690,embedded_pdf_text,"Appendix 7: Library reading activity session plan – 35 mins Name of the teacher……………………. Date……………………………… Grade……………………………………. Activity……………………….
+Learning objective…………………………… Activity Time Facilitator Reading Pledge 2 mins Led by a learner Recap of Previous Lesson Brief discussion on the previous library session or book read.
+3 mins Teacher Librarian The teacher librarian conducts any one fun literacy activity i.e.,
+- Debate - Storytelling
+- Story narration - Dramatization/Role play
+- Anagram - Spelling Bee
+Or Silent reading – learners choose a book of their choice and read individually 20 mins Learners guided by Teacher Librarian Discussion and Questions 10 mins Teacher Librarian"
+sal-5513818d1a60,sal-teacher-librarian-guide,Chapter 1 Learning Objectives,Chapter 1: Introduction to Libraries,1.0,library_foundations,learning objectives | school library | teacher librarian | competencies,learning_objectives,en,5,5,1,1,57,384,reviewed_manual_transcription,"By the end of this chapter, the teacher librarian should be able to explain the role of a school library in supporting foundational learning; describe the role and responsibilities of a teacher librarian; explain how school libraries contribute to literacy, life skills and social-emotional learning; and identify the core competencies required to manage a school library effectively."
+sal-ac6e54b031ff,sal-teacher-librarian-guide,Chapter 2 Learning Objectives,Chapter 2: Practical School Library Operations,2.0,library_operations,learning objectives | library resources | records | learner-friendly library,learning_objectives,en,8,8,1,1,44,315,reviewed_manual_transcription,"By the end of this chapter, the teacher librarian should be able to organize and manage library resources; apply basic library management procedures; maintain accurate library records; create a learner-friendly library environment; and identify the core competencies required to manage a school library effectively."
+sal-a28d2b4d9f1d,sal-teacher-librarian-guide,Chapter 3 Learning Objectives,Chapter 3: Bringing Books to Life,3.0,reading_activities,learning objectives | literacy activities | reading for pleasure | life skills,learning_objectives,en,14,14,1,1,40,286,reviewed_manual_transcription,"By the end of this chapter, the teacher librarian should be able to plan and facilitate engaging literacy activities; promote reading for pleasure; integrate life skills and social-emotional learning into reading activities; and use stories to strengthen learners' literacy development."
+sal-9513c03af6fd,sal-teacher-librarian-guide,Chapter 4 Learning Objectives,Chapter 4: Reading Culture and Stakeholder Engagement,4.0,reading_culture,learning objectives | partnerships | parents | learner leadership | community,learning_objectives,en,27,27,1,1,35,243,reviewed_manual_transcription,"By the end of this chapter, the teacher librarian should be able to build partnerships that support literacy; engage parents and caregivers in children's reading; promote learner leadership; and mobilize community support for library programs."
+sal-f78c4d20e642,sal-teacher-librarian-guide,Chapter 5 Learning Objectives,Chapter 5: Monitoring and Sustainability,5.0,monitoring_and_evaluation,learning objectives | records | learner progress | reporting | data use,learning_objectives,en,34,34,1,1,34,229,reviewed_manual_transcription,"By the end of this chapter, the teacher librarian should be able to maintain accurate library records; monitor learner participation and progress; report library activities and outcomes; and use data to improve literacy programs."
+sal-90a48e2debf8,sal-teacher-librarian-guide,Poster: Writing Tips and Selecting Suitable Books,Appendix,A8.1,library_posters,writing tips | book selection | five finger rule | poster,poster_transcription,en,40,40,1,1,73,461,manual_image_transcription,"Writing tips: Write clear, short sentences. Use capital letters at the beginning and full stops at the end. Check spelling and punctuation. Use paragraphs to organize ideas. Read your work again to correct mistakes.
+
+Tips for selecting books: Choose books according to the learner's reading level. Use the Five Finger Rule. Look at the cover and title to predict the story. Choose books that match learners' interests. Encourage learners to try different books."
+sal-354424906fa6,sal-teacher-librarian-guide,Poster: Library Rules and Reading Motivation,Appendix,A8.2,library_posters,library rules | reading motivation | poster | book care,poster_transcription,en,41,41,1,1,116,651,manual_image_transcription,"Library rules: Keep the library clean. Read silently and do not make noise. Keep food and drinks out of the library. Do not tear, fold or write on books. Use a bookmark instead of folding pages. Return books on time. Return books to the teacher librarian after reading. Handle books with clean hands. Keep books away from water and fire. Report damaged books to the teacher librarian.
+
+Reading motivation: Reading is dreaming with open eyes. The more that you read, the more things you will know. The more that you learn, the more places you'll go. Today a reader, tomorrow a leader. Reading gives us someplace to go when we have to stay where we are."
+sal-46c974a456dc,sal-teacher-librarian-guide,Reading Pledge - English,Appendix,A8.3,reading_pledge,reading pledge | English | weekly reading | reading motivation,pledge_transcription,en,42,42,1,1,83,499,manual_image_transcription,"I pledge to read stories for fun, to imagine, explore and learn. By reading every week for at least one hour, I will boost my brain power. Power power! Reading introduces new words and shows how sentences work together. Reading helps me understand others. Reading exposes me to new ideas and unlimited possibilities. Opens my mind to unseen worlds and exciting opportunities. Reading boosts my brain power. Power power! I read regularly. I am a Reading Revolutionary. Reading is cool! Kusoma ni poa!"
+sal-e354c5022a4e,sal-teacher-librarian-guide,Ahadi ya Kusoma - Kiswahili,Appendix,A8.4,reading_pledge,reading pledge | Kiswahili | weekly reading | reading motivation,pledge_transcription,sw,43,43,1,1,83,577,manual_image_transcription,"Ninaahidi kusoma hadithi kwa ajili ya kujifurahisha, kufikiria, kuchunguza na kujifunza. Kwa kusoma kila wiki kwa angalau saa moja, nitaongeza nguvu ya ubongo wangu. Nguvu! Nguvu! Kusoma hunitambulisha kwa maneno mapya na kunionyesha jinsi sentensi zinavyofanya kazi pamoja. Kusoma hunisaidia kuwaelewa wengine. Kusoma hunifungulia mawazo mapya na fursa zisizo na kikomo. Kusoma hufungua akili yangu kwa ulimwengu usioonekana na fursa za kusisimua. Kusoma huongeza nguvu ya ubongo wangu. Nguvu! Nguvu! Mimi husoma mara kwa mara. Mimi ni Mwanamapinduzi wa Kusoma. Kusoma ni poa!"
+sal-5d2d0e085b78,sal-teacher-librarian-guide,Child Safeguarding Tips,Appendix,A9,child_safeguarding,child safeguarding | safe environment | reporting | confidentiality,safeguarding_guidance_transcription,en,44,44,1,1,129,923,manual_image_transcription,"Create a safe and respectful environment where every child feels valued and included. Treat all children fairly regardless of gender, ability, background or reading level. Use positive discipline and never use physical punishment, humiliation, threats or abusive language. Avoid being alone with a child in a closed or hidden space; conduct activities in open, visible and supervised areas. Do not take or share photos or videos of children without following the school's and SAL's consent and safeguarding procedures. Maintain appropriate boundaries with learners and avoid favouritism, inappropriate touching or private communication. Listen calmly if a child raises a concern; do not investigate or promise secrecy. Record and report safeguarding concerns immediately through the school's and SAL's approved reporting procedures. Protect confidentiality and share information only with authorized safeguarding personnel."

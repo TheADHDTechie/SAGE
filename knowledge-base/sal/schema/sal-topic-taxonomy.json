@@ -1,0 +1,139 @@
+{
+  "document_id": "sal-teacher-librarian-guide",
+  "source_title": "SAL Final Teacher Librarian Guide",
+  "top_level_topics": [
+    {
+      "id": "organization_and_context",
+      "label": "SAL and Manual Context",
+      "description": "SAL's mission, foundational learning context, program purpose and intended users.",
+      "child_topics": [
+        "organization_and_context"
+      ]
+    },
+    {
+      "id": "library_foundations_and_roles",
+      "label": "Library Foundations and Teacher Librarian Role",
+      "description": "Why libraries matter and the responsibilities, skills and safeguarding awareness of teacher librarians.",
+      "child_topics": [
+        "library_foundations",
+        "teacher_librarian_role"
+      ]
+    },
+    {
+      "id": "library_management",
+      "label": "Practical Library Management",
+      "description": "Setting up, organizing and operating a safe, accessible and accountable school library.",
+      "child_topics": [
+        "library_operations",
+        "library_space",
+        "book_organization",
+        "book_inventory",
+        "circulation_and_book_selection",
+        "library_routines",
+        "library_rules",
+        "records_and_reporting",
+        "book_care_and_repair"
+      ]
+    },
+    {
+      "id": "literacy_activities",
+      "label": "Reading and Literacy Activities",
+      "description": "Principles and step-by-step guides for learner-centered reading activities.",
+      "child_topics": [
+        "reading_activities",
+        "activity_facilitation",
+        "life_skills_and_values",
+        "read_aloud",
+        "storytelling",
+        "spelling_bee",
+        "debate",
+        "dramatization_and_role_play",
+        "story_building",
+        "anagram_word_building",
+        "book_clubs",
+        "sal_programs"
+      ]
+    },
+    {
+      "id": "reading_culture_and_engagement",
+      "label": "Reading Culture and Stakeholder Engagement",
+      "description": "Whole-school reading culture, learner leadership, parents, partners and literacy events.",
+      "child_topics": [
+        "reading_culture",
+        "school_leadership",
+        "teacher_engagement",
+        "learner_leadership",
+        "reading_events",
+        "parental_engagement",
+        "community_partnerships",
+        "reading_culture_challenges"
+      ]
+    },
+    {
+      "id": "monitoring_and_sustainability",
+      "label": "Monitoring, Reporting and Sustainability",
+      "description": "Indicators, records, reporting, continuous improvement and long-term school ownership.",
+      "child_topics": [
+        "monitoring_and_evaluation",
+        "monitoring_indicators",
+        "program_sustainability",
+        "record_templates",
+        "learner_reading_records",
+        "session_plans"
+      ]
+    },
+    {
+      "id": "reference_materials",
+      "label": "Reference Posters, Pledges and Safeguarding",
+      "description": "Ready-to-use posters, reading pledges and child safeguarding reminders.",
+      "child_topics": [
+        "library_posters",
+        "reading_pledge",
+        "child_safeguarding"
+      ]
+    }
+  ],
+  "leaf_topics": [
+    "activity_facilitation",
+    "anagram_word_building",
+    "book_care_and_repair",
+    "book_clubs",
+    "book_inventory",
+    "book_organization",
+    "child_safeguarding",
+    "circulation_and_book_selection",
+    "community_partnerships",
+    "debate",
+    "dramatization_and_role_play",
+    "learner_leadership",
+    "learner_reading_records",
+    "library_foundations",
+    "library_operations",
+    "library_posters",
+    "library_routines",
+    "library_rules",
+    "library_space",
+    "life_skills_and_values",
+    "monitoring_and_evaluation",
+    "monitoring_indicators",
+    "organization_and_context",
+    "parental_engagement",
+    "program_sustainability",
+    "read_aloud",
+    "reading_activities",
+    "reading_culture",
+    "reading_culture_challenges",
+    "reading_events",
+    "reading_pledge",
+    "record_templates",
+    "records_and_reporting",
+    "sal_programs",
+    "school_leadership",
+    "session_plans",
+    "spelling_bee",
+    "story_building",
+    "storytelling",
+    "teacher_engagement",
+    "teacher_librarian_role"
+  ]
+}

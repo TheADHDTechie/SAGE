@@ -1,0 +1,3 @@
+knowledge-base/sal/data/** -text
+knowledge-base/sal/schema/** -text
+knowledge-base/sal/tools/** -text
