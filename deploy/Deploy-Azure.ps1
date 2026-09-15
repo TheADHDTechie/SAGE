@@ -9,7 +9,6 @@ param(
   [string] $AzureLlmDeployment = "gpt-5.6-luna",
   [string] $AzureAiResourceName = "ai-nour2005-0011",
   [string] $AzureSpeechEndpoint = "https://ai-nour20055617ai423721357232.cognitiveservices.azure.com",
-  [string] $AzureSpeechModel = "MAI-Transcribe-2",
   [string] $AzureSpeechResourceName = "ai-nour20055617ai423721357232",
   [string] $ImageTag = (Get-Date -Format "yyyyMMddHHmmss"),
   [switch] $SkipBuild,
@@ -133,7 +132,6 @@ $deploymentJson = az deployment group create `
     azureLlmDeployment=$AzureLlmDeployment `
     speechEnabled=$($EnableSpeech.IsPresent.ToString().ToLowerInvariant()) `
     azureSpeechEndpoint=$AzureSpeechEndpoint `
-    azureSpeechModel=$AzureSpeechModel `
     contactHashKey=$contactHashKey `
     whatsappEnabled=$($EnableWhatsApp.IsPresent.ToString().ToLowerInvariant()) `
     whatsappVerifyToken=$whatsAppVerifyToken `

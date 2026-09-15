@@ -105,8 +105,8 @@ Enable Azure Speech transcription when deploying:
 .\deploy\Deploy-Azure.ps1 -EnableWhatsApp -EnableSpeech
 ```
 
-The deployment uses the configured Azure AI Speech endpoint and
-`MAI-Transcribe-2`. It grants the Container App managed identity
-`Cognitive Services User` access to the Speech resource, so no Speech key is
-stored in Container Apps. Without `-EnableSpeech`, real audio receives the
-transcription-failure fallback.
+The deployment uses the configured Azure AI Speech endpoint and fast
+transcription with English (`en-US`) and Kiswahili (`sw-KE`) candidate locales.
+It grants the Container App managed identity `Cognitive Services User` access
+to the Speech resource, so no Speech key is stored in Container Apps. Without
+`-EnableSpeech`, real audio receives the transcription-failure fallback.

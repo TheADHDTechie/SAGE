@@ -37,7 +37,7 @@ export class AzureSpeechTranscriber implements SpeechTranscriber {
   private readonly credential = new DefaultAzureCredential();
 
   constructor(private readonly config: AppConfig) {
-    this.providerName = config.AZURE_SPEECH_MODEL;
+    this.providerName = "azure-enhanced-transcription";
   }
 
   async transcribe(input: {
@@ -54,13 +54,7 @@ export class AzureSpeechTranscriber implements SpeechTranscriber {
     form.append(
       "definition",
       JSON.stringify({
-        enhancedMode: {
-          enabled: true,
-          model: this.config.AZURE_SPEECH_MODEL,
-          modelOptions: {
-            transcribeStyle: "clean",
-          },
-        },
+        locales: ["en-US", "sw-KE"],
       }),
     );
 
