@@ -19,6 +19,15 @@ param azureOpenAIEndpoint string
 @description('Azure OpenAI model deployment name.')
 param azureLlmDeployment string
 
+@description('Whether Azure Speech transcription is enabled.')
+param speechEnabled bool = false
+
+@description('Azure AI Speech resource endpoint.')
+param azureSpeechEndpoint string = ''
+
+@description('Azure Speech transcription model name.')
+param azureSpeechModel string = 'MAI-Transcribe-2'
+
 @secure()
 param contactHashKey string
 
@@ -144,7 +153,15 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'SPEECH_PROVIDER'
-              value: 'mock'
+              value: speechEnabled ? 'azure' : 'mock'
+            }
+            {
+              name: 'AZURE_SPEECH_ENDPOINT'
+              value: azureSpeechEndpoint
+            }
+            {
+              name: 'AZURE_SPEECH_MODEL'
+              value: azureSpeechModel
             }
             {
               name: 'ENABLE_TEST_ENDPOINTS'

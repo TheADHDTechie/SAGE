@@ -8,9 +8,13 @@ param(
   [string] $AzureOpenAIEndpoint = "https://ai-nour2005-0011.openai.azure.com",
   [string] $AzureLlmDeployment = "gpt-5.6-luna",
   [string] $AzureAiResourceName = "ai-nour2005-0011",
+  [string] $AzureSpeechEndpoint = "https://ai-nour20055617ai423721357232.cognitiveservices.azure.com",
+  [string] $AzureSpeechModel = "MAI-Transcribe-2",
+  [string] $AzureSpeechResourceName = "ai-nour20055617ai423721357232",
   [string] $ImageTag = (Get-Date -Format "yyyyMMddHHmmss"),
   [switch] $SkipBuild,
-  [switch] $EnableWhatsApp
+  [switch] $EnableWhatsApp,
+  [switch] $EnableSpeech
 )
 
 $ErrorActionPreference = "Stop"
@@ -127,6 +131,9 @@ $deploymentJson = az deployment group create `
     appName=$AppName `
     azureOpenAIEndpoint=$AzureOpenAIEndpoint `
     azureLlmDeployment=$AzureLlmDeployment `
+    speechEnabled=$($EnableSpeech.IsPresent.ToString().ToLowerInvariant()) `
+    azureSpeechEndpoint=$AzureSpeechEndpoint `
+    azureSpeechModel=$AzureSpeechModel `
     contactHashKey=$contactHashKey `
     whatsappEnabled=$($EnableWhatsApp.IsPresent.ToString().ToLowerInvariant()) `
     whatsappVerifyToken=$whatsAppVerifyToken `
@@ -162,6 +169,32 @@ if (-not $existingRole) {
     --scope $aiResourceId `
     --output none
   Assert-AzureCommand -Action "grant Azure AI access"
+}
+
+if ($EnableSpeech) {
+  $speechResourceId = az cognitiveservices account show `
+    --name $AzureSpeechResourceName `
+    --resource-group $ResourceGroup `
+    --query id `
+    --output tsv
+  Assert-AzureCommand -Action "find the Azure Speech resource"
+
+  $existingSpeechRole = az role assignment list `
+    --assignee $principalId `
+    --scope $speechResourceId `
+    --query "[?roleDefinitionName=='Cognitive Services User'].id | [0]" `
+    --output tsv
+  Assert-AzureCommand -Action "check Azure Speech access"
+
+  if (-not $existingSpeechRole) {
+    az role assignment create `
+      --assignee-object-id $principalId `
+      --assignee-principal-type ServicePrincipal `
+      --role "Cognitive Services User" `
+      --scope $speechResourceId `
+      --output none
+    Assert-AzureCommand -Action "grant Azure Speech access"
+  }
 }
 
 $deployment | ConvertTo-Json -Depth 10

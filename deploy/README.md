@@ -99,6 +99,14 @@ uses `DefaultAzureCredential` without storing an Azure model key in Container Ap
 
 ## Real WhatsApp voice notes
 
-The initial deployment uses `SPEECH_PROVIDER=mock`. Configure an Azure Speech endpoint
-and update the Bicep environment settings before testing real WhatsApp audio. With the
-mock provider, real audio receives the transcription-failure fallback.
+Enable Azure Speech transcription when deploying:
+
+```powershell
+.\deploy\Deploy-Azure.ps1 -EnableWhatsApp -EnableSpeech
+```
+
+The deployment uses the configured Azure AI Speech endpoint and
+`MAI-Transcribe-2`. It grants the Container App managed identity
+`Cognitive Services User` access to the Speech resource, so no Speech key is
+stored in Container Apps. Without `-EnableSpeech`, real audio receives the
+transcription-failure fallback.
