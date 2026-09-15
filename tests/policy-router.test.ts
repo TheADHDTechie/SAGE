@@ -24,6 +24,32 @@ describe("policy routing", () => {
     }
   });
 
+  it.each([
+    ["Hello!", "en"],
+    ["Good morning", "en"],
+    ["Thank you very much", "en"],
+    ["Jambo", "sw"],
+    ["Habari mwalimu", "sw"],
+    ["Asante sana", "sw"],
+  ] as const)("responds directly to the social message %s", (message, language) => {
+    const decision = routeByPolicy(message);
+
+    expect(decision.action).toBe("respond");
+    expect(decision.language).toBe(language);
+  });
+
+  it("continues when a greeting includes a manual question", () => {
+    expect(
+      routeByPolicy("Hi, how should I organize library books?").action,
+    ).toBe("continue");
+  });
+
+  it("does not treat a reference to a teacher as a human-support request", () => {
+    expect(
+      routeByPolicy("What should a teacher librarian do each morning?").action,
+    ).toBe("continue");
+  });
+
   it("closes an opt-out conversation", () => {
     expect(routeByPolicy("STOP").action).toBe("close");
   });

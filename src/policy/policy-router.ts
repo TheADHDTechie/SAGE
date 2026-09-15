@@ -2,6 +2,7 @@ import type { SupportedLanguage } from "../domain/types.js";
 
 export type PolicyDecision =
   | { action: "continue"; language: SupportedLanguage }
+  | { action: "respond"; language: SupportedLanguage; response: string }
   | { action: "handoff"; language: SupportedLanguage; reason: string; response: string }
   | { action: "close"; language: SupportedLanguage; response: string };
 
@@ -18,13 +19,20 @@ const kiswahiliSignals = [
   "watoto",
   "mwalimu",
   "tafadhali",
+  "jambo",
+  "habari",
+  "hujambo",
+  "mambo",
+  "shikamoo",
+  "asante",
 ];
 
 const humanPatterns = [
   /\b(human|person|agent|staff|representative)\b/i,
   /\b(talk|speak|chat)\s+(to|with)\b/i,
-  /\b(mtu|mfanyakazi|mwalimu|afisa)\b/i,
   /\b(zungumza|ongea)\s+na\b/i,
+  /\b(nataka|naomba|nahitaji)\b.{0,30}\b(mtu|mfanyakazi|afisa)\b/i,
+  /\b(niunganishe|nipatie)\b.{0,30}\b(mtu|mfanyakazi|afisa)\b/i,
 ];
 
 const stopPatterns = [
@@ -45,6 +53,19 @@ const obviousOutOfScopePatterns = [
   /\b(stock prices|order dinner|passport|transfer money|airport)\b/i,
   /\b(sell me a mobile phone)\b/i,
 ];
+
+const socialPatterns = [
+  /^(?:(?:hi|hello|hey)(?:\s+there|\s+sage)?|good\s+(?:morning|afternoon|evening)|greetings)[!.]*$/i,
+  /^(?:thank\s+you|thanks)(?:\s+(?:very\s+much|a\s+lot))?[!.]*$/i,
+  /^(?:jambo|hujambo|mambo|shikamoo|habari)(?:\s+(?:yako|zako|sage|mwalimu))?[!.]*$/i,
+  /^habari\s+za\s+(?:asubuhi|mchana|jioni)[!.]*$/i,
+  /^asante(?:\s+sana)?[!.]*$/i,
+];
+
+const socialResponses: Record<"en" | "sw", string> = {
+  en: "Hello! I'm SAGE, the Start A Library support assistant. I can help with questions about setting up and running a school library. What would you like help with?",
+  sw: "Habari! Mimi ni SAGE, msaidizi wa Start A Library. Ninaweza kusaidia kuhusu kuanzisha na kuendesha maktaba ya shule. Ungependa kusaidiwa na nini?",
+};
 
 export function routeByPolicy(message: string): PolicyDecision {
   const language = detectLanguage(message);
@@ -81,6 +102,15 @@ export function routeByPolicy(message: string): PolicyDecision {
         language === "sw"
           ? "Nimepeleka swali lako kwa mfanyakazi wa SAL, ambaye anaweza kujibu katika mazungumzo haya."
           : "I have forwarded your question to a SAL staff member, who can reply in this conversation.",
+    };
+  }
+
+  if (socialPatterns.some((pattern) => pattern.test(message.trim()))) {
+    const responseLanguage = language === "sw" || language === "mixed" ? "sw" : "en";
+    return {
+      action: "respond",
+      language: responseLanguage,
+      response: socialResponses[responseLanguage],
     };
   }
 

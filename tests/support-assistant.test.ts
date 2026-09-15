@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { SupportAssistant } from "../src/application/support-assistant.js";
+import type { SupportModelResult } from "../src/domain/types.js";
 import type {
   LanguageModelGateway,
   LanguageModelInput,
@@ -79,6 +80,38 @@ describe("SupportAssistant", () => {
     store.close();
 
     expect(duplicate.status).toBe("duplicate");
+  });
+
+  it("answers a greeting without calling the language model or creating a handoff", async () => {
+    class UnexpectedLanguageModelGateway implements LanguageModelGateway {
+      readonly deploymentName = "unexpected-call";
+
+      async answerSupportQuestion(
+        _input: LanguageModelInput,
+      ): Promise<SupportModelResult> {
+        throw new Error("The language model must not be called for greetings");
+      }
+    }
+
+    const { assistant, store } = createContext(
+      new UnexpectedLanguageModelGateway(),
+    );
+    const result = await assistant.process({
+      externalMessageId: "greeting-1",
+      externalUserId: "greeting-user",
+      type: "text",
+      text: "Habari mwalimu",
+      receivedAt: new Date().toISOString(),
+    });
+    const diagnostics = store.whatsAppDiagnostics();
+    store.close();
+
+    expect(result.status).toBe("answered");
+    if (result.status === "answered") {
+      expect(result.language).toBe("sw");
+      expect(result.citations).toEqual([]);
+    }
+    expect(diagnostics.handoffs).toEqual({});
   });
 
   it("hands off explicit human requests and keeps the bot paused", async () => {

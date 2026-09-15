@@ -67,6 +67,21 @@ export class SupportAssistant {
       };
     }
 
+    if (policy.action === "respond") {
+      this.store.recordAssistantMessage({
+        conversationId: inbound.conversationId,
+        content: policy.response,
+        language: policy.language,
+      });
+      return {
+        status: "answered",
+        conversationId: inbound.conversationId,
+        language: policy.language,
+        answer: policy.response,
+        citations: [],
+      };
+    }
+
     if (policy.action === "handoff") {
       return this.handoff(
         inbound.conversationId,
