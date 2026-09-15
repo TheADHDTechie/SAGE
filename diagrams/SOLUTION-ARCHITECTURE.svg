@@ -1,0 +1,158 @@
+<svg class="architecture-svg large-format-architecture" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1320" role="img" aria-labelledby="title description">
+  <title id="title">SAL WhatsApp support assistant architecture</title>
+  <desc id="description">A vertical architecture flow from WhatsApp user through the SAL API, routing, voice transcription, prompt construction, local knowledge, GPT-5.6 Luna, response validation, and automatic answer or staff handoff.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4fff9"/>
+      <stop offset=".52" stop-color="#f7fbff"/>
+      <stop offset="1" stop-color="#edf4ff"/>
+    </linearGradient>
+    <linearGradient id="whatsapp" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#25d366"/>
+      <stop offset="1" stop-color="#078b48"/>
+    </linearGradient>
+    <linearGradient id="service" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0ca08e"/>
+      <stop offset="1" stop-color="#00695c"/>
+    </linearGradient>
+    <linearGradient id="azure" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b9aef"/>
+      <stop offset="1" stop-color="#0067b9"/>
+    </linearGradient>
+    <linearGradient id="local" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8a67dc"/>
+      <stop offset="1" stop-color="#5834ad"/>
+    </linearGradient>
+    <linearGradient id="handoff" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffb13b"/>
+      <stop offset="1" stop-color="#eb701d"/>
+    </linearGradient>
+    <linearGradient id="custom" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f16f54"/>
+      <stop offset="1" stop-color="#c94235"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#123c50" flood-opacity=".20"/>
+    </filter>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0L8 4 0 8z" fill="#17627a"/>
+    </marker>
+    <style>
+      .node { filter: url(#shadow); stroke: #123d4d; stroke-width: 2.5; }
+      .title { font: 800 19px "Segoe UI", Arial, sans-serif; fill: #fff; }
+      .detail { font: 600 14px "Segoe UI", Arial, sans-serif; fill: #eafff8; }
+      .band-title { font: 800 17px "Segoe UI", Arial, sans-serif; fill: #174b5d; letter-spacing: .04em; }
+      .edge { fill: none; stroke: #17627a; stroke-width: 2.25; marker-end: url(#arrow); }
+      .return-edge { fill: none; stroke: #17627a; stroke-width: 1.8; stroke-dasharray: 8 7; marker-end: url(#arrow); }
+      .edge-label { font: 800 14px "Segoe UI", Arial, sans-serif; fill: #174b5d; }
+      .label-bg { fill: #fff; stroke: #7fb9c6; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <rect x="10" y="10" width="1180" height="1300" rx="30" fill="url(#background)" stroke="#63bdc8" stroke-width="3"/>
+
+  <text x="48" y="55" class="band-title">USER CHANNEL</text>
+  <rect x="35" y="72" width="1130" height="235" rx="22" fill="#e9fff2" stroke="#71c993" stroke-width="2"/>
+
+  <rect class="node" x="420" y="98" width="360" height="70" rx="18" fill="url(#whatsapp)"/>
+  <text x="600" y="127" text-anchor="middle" class="title">WhatsApp user</text>
+  <text x="600" y="151" text-anchor="middle" class="detail">Text question or voice memo</text>
+
+  <path class="edge" d="M600 168V207"/>
+
+  <rect class="node" x="420" y="212" width="360" height="70" rx="18" fill="url(#whatsapp)"/>
+  <text x="600" y="241" text-anchor="middle" class="title">Meta WhatsApp Cloud API</text>
+  <text x="600" y="265" text-anchor="middle" class="detail">Receives and sends messages</text>
+
+  <text x="48" y="350" class="band-title">SAL SUPPORT WORKFLOW</text>
+  <rect x="35" y="367" width="1130" height="700" rx="22" fill="#f7fcff" stroke="#75acc3" stroke-width="2"/>
+
+  <path class="edge" d="M600 282V398"/>
+  <rect class="label-bg" x="623" y="325" width="112" height="28" rx="8"/>
+  <text x="679" y="345" text-anchor="middle" class="edge-label">Webhook</text>
+
+  <rect class="node" x="420" y="403" width="360" height="70" rx="18" fill="url(#service)"/>
+  <text x="600" y="432" text-anchor="middle" class="title">SAL API service</text>
+  <text x="600" y="456" text-anchor="middle" class="detail">Orchestration, policy and audit</text>
+
+  <path class="edge" d="M600 473V512"/>
+
+  <rect class="node" x="390" y="517" width="420" height="78" rx="18" fill="url(#service)"/>
+  <text x="600" y="548" text-anchor="middle" class="title">Rules and conversation router</text>
+  <text x="600" y="574" text-anchor="middle" class="detail">Language, safety, conversation state and handoff checks</text>
+
+  <path class="edge" d="M510 595V630H265V665"/>
+  <rect class="label-bg" x="354" y="614" width="66" height="28" rx="8"/>
+  <text x="387" y="634" text-anchor="middle" class="edge-label">Voice</text>
+
+  <rect class="node" x="90" y="670" width="350" height="78" rx="18" fill="url(#azure)"/>
+  <text x="265" y="701" text-anchor="middle" class="title">Azure Speech / MAI-Transcribe-2</text>
+  <text x="265" y="727" text-anchor="middle" class="detail">Converts a voice memo to text</text>
+
+  <path class="edge" d="M690 595V665"/>
+  <rect class="label-bg" x="707" y="614" width="58" height="28" rx="8"/>
+  <text x="736" y="634" text-anchor="middle" class="edge-label">Text</text>
+
+  <rect class="node" x="480" y="670" width="300" height="78" rx="18" fill="url(#service)"/>
+  <text x="630" y="701" text-anchor="middle" class="title">Prompt builder</text>
+  <text x="630" y="727" text-anchor="middle" class="detail">Question, history and manual</text>
+
+  <path class="edge" d="M440 709H480"/>
+
+  <rect class="node" x="835" y="648" width="140" height="74" rx="18" fill="url(#local)"/>
+  <text x="905" y="678" text-anchor="middle" class="title">Manual</text>
+  <text x="905" y="702" text-anchor="middle" class="detail">58 chunks</text>
+
+  <rect class="node" x="835" y="742" width="140" height="74" rx="18" fill="url(#local)"/>
+  <text x="905" y="772" text-anchor="middle" class="title">SQLite</text>
+  <text x="905" y="796" text-anchor="middle" class="detail">Local state</text>
+
+  <path class="edge" d="M835 685H810V695H780"/>
+  <path class="edge" d="M835 779H810V725H780"/>
+
+  <path class="edge" d="M630 748V795"/>
+
+  <rect class="node" x="480" y="800" width="300" height="78" rx="18" fill="url(#azure)"/>
+  <text x="630" y="831" text-anchor="middle" class="title">GPT-5.6 Luna</text>
+  <text x="630" y="857" text-anchor="middle" class="detail">Grounded English or Kiswahili answer</text>
+
+  <path class="edge" d="M630 878V925"/>
+
+  <rect class="node" x="450" y="930" width="360" height="78" rx="18" fill="url(#service)"/>
+  <text x="630" y="961" text-anchor="middle" class="title">Response and citation validator</text>
+  <text x="630" y="987" text-anchor="middle" class="detail">Checks evidence, schema and policy</text>
+
+  <path class="return-edge" d="M810 969H1080V247H780"/>
+  <rect class="label-bg" x="895" y="945" width="154" height="28" rx="8"/>
+  <text x="972" y="965" text-anchor="middle" class="edge-label">Supported answer</text>
+
+  <text x="48" y="1110" class="band-title">HUMAN SUPPORT</text>
+  <rect x="35" y="1127" width="1130" height="155" rx="22" fill="#fff9eb" stroke="#e7a94b" stroke-width="2"/>
+
+  <path class="edge" d="M630 1008V1138"/>
+  <rect class="label-bg" x="651" y="1052" width="128" height="28" rx="8"/>
+  <text x="715" y="1072" text-anchor="middle" class="edge-label">Needs a person</text>
+
+  <polygon class="node" points="600,1147 695,1194 600,1241 505,1194" fill="url(#handoff)"/>
+  <text x="600" y="1188" text-anchor="middle" class="title">Coexistence</text>
+  <text x="600" y="1212" text-anchor="middle" class="detail">available?</text>
+
+  <path class="edge" d="M505 1194H400"/>
+  <rect class="label-bg" x="435" y="1168" width="48" height="26" rx="8"/>
+  <text x="459" y="1187" text-anchor="middle" class="edge-label">Yes</text>
+
+  <rect class="node" x="65" y="1157" width="335" height="74" rx="18" fill="url(#whatsapp)"/>
+  <text x="232" y="1187" text-anchor="middle" class="title">WhatsApp Business app</text>
+  <text x="232" y="1212" text-anchor="middle" class="detail">SAL staff reply in WhatsApp</text>
+
+  <path class="edge" d="M695 1194H800"/>
+  <rect class="label-bg" x="716" y="1168" width="44" height="26" rx="8"/>
+  <text x="738" y="1187" text-anchor="middle" class="edge-label">No</text>
+
+  <rect class="node" x="800" y="1157" width="335" height="74" rx="18" fill="url(#custom)"/>
+  <text x="967" y="1187" text-anchor="middle" class="title">Custom staff chat interface</text>
+  <text x="967" y="1212" text-anchor="middle" class="detail">Used when Coexistence is unavailable</text>
+
+  <path class="return-edge" d="M232 1157V1090H45V247H420"/>
+  <path class="return-edge" d="M967 1157V1082H1128V247H780"/>
+</svg>

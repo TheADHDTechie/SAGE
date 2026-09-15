@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Two-page stakeholder overview of the SAL WhatsApp Support Assistant.">
+  <title>SAL WhatsApp Support Assistant - Stakeholder Brief</title>
+  <style>
+    :root {
+      --navy: #102a43;
+      --teal: #008c7a;
+      --teal-dark: #00695c;
+      --green: #25d366;
+      --azure: #0078d4;
+      --violet: #7657c8;
+      --orange: #f28c28;
+      --gold: #f5bd3d;
+      --red: #e75b52;
+      --ink: #193248;
+      --muted: #60758a;
+      --line: #d9e5ed;
+      --paper: #ffffff;
+      --canvas: #dfeaf0;
+      --soft: #f3f8fb;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--canvas);
+      font-family: "Segoe UI", Arial, sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    body { padding: 18px 0; }
+
+    .page {
+      position: relative;
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto 18px;
+      overflow: hidden;
+      background: var(--paper);
+      box-shadow: 0 18px 50px rgba(16, 42, 67, .18);
+      page-break-after: always;
+    }
+
+    .page:last-child { page-break-after: auto; }
+
+    .hero {
+      position: relative;
+      height: 64mm;
+      padding: 17mm 16mm 12mm;
+      overflow: hidden;
+      color: white;
+      background:
+        radial-gradient(circle at 85% 20%, rgba(255,255,255,.20), transparent 22%),
+        linear-gradient(125deg, #075f55 0%, #008c7a 46%, #0875c1 100%);
+    }
+
+    .hero::before,
+    .hero::after {
+      position: absolute;
+      border: 2px solid rgba(255,255,255,.18);
+      border-radius: 50%;
+      content: "";
+    }
+
+    .hero::before { width: 78mm; height: 78mm; top: -35mm; right: -12mm; }
+    .hero::after { width: 48mm; height: 48mm; bottom: -31mm; right: 38mm; }
+
+    .eyebrow {
+      position: relative;
+      z-index: 1;
+      margin: 0 0 3mm;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      opacity: .86;
+    }
+
+    h1 {
+      position: relative;
+      z-index: 1;
+      max-width: 150mm;
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.05;
+      letter-spacing: -.035em;
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 1;
+      max-width: 142mm;
+      margin: 4mm 0 0;
+      font-size: 13px;
+      line-height: 1.45;
+      opacity: .94;
+    }
+
+    .content { padding: 8mm 13mm 11mm; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4mm;
+      margin-top: -17mm;
+      position: relative;
+      z-index: 2;
+    }
+
+    .metric {
+      min-height: 31mm;
+      padding: 5mm;
+      border: 1px solid rgba(16, 42, 67, .10);
+      border-radius: 4mm;
+      background: white;
+      box-shadow: 0 7px 20px rgba(16, 42, 67, .12);
+    }
+
+    .metric-icon {
+      display: grid;
+      width: 9mm;
+      height: 9mm;
+      margin-bottom: 2.5mm;
+      place-items: center;
+      border-radius: 2.5mm;
+      color: white;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .metric:nth-child(1) .metric-icon { background: linear-gradient(145deg, #25d366, #07974a); }
+    .metric:nth-child(2) .metric-icon { background: linear-gradient(145deg, #7657c8, #4b32a4); }
+    .metric:nth-child(3) .metric-icon { background: linear-gradient(145deg, #f5bd3d, #ed821f); }
+
+    .metric strong {
+      display: block;
+      margin-bottom: 1mm;
+      color: var(--navy);
+      font-size: 14px;
+    }
+
+    .metric span { color: var(--muted); font-size: 10.5px; line-height: 1.35; }
+
+    h2 {
+      margin: 7mm 0 3mm;
+      color: var(--navy);
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: -.015em;
+    }
+
+    .section-lead {
+      margin: -1mm 0 4mm;
+      color: var(--muted);
+      font-size: 10.5px;
+      line-height: 1.4;
+    }
+
+    .diagram {
+      padding: 3.5mm;
+      border: 2px solid #79bdc7;
+      border-radius: 4mm;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(37,211,102,.10), transparent 24%),
+        radial-gradient(circle at 90% 12%, rgba(0,120,212,.13), transparent 27%),
+        linear-gradient(145deg, #ffffff, #e8f5f7);
+      box-shadow: 0 5px 16px rgba(16, 78, 88, .13);
+    }
+
+    .diagram svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      filter: saturate(1.18) contrast(1.06);
+    }
+
+    .principles {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3mm;
+      margin-top: 5mm;
+    }
+
+    .principle {
+      padding: 3.2mm;
+      border-top: 2px solid var(--teal);
+      border-radius: 0 0 2.5mm 2.5mm;
+      background: var(--soft);
+    }
+
+    .principle:nth-child(2) { border-color: var(--azure); }
+    .principle:nth-child(3) { border-color: var(--violet); }
+    .principle:nth-child(4) { border-color: var(--orange); }
+
+    .principle strong { display: block; margin-bottom: 1mm; font-size: 10.5px; }
+    .principle span { display: block; color: var(--muted); font-size: 9px; line-height: 1.35; }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 23mm;
+      padding: 0 13mm;
+      color: white;
+      background: linear-gradient(100deg, #102a43, #174d6c);
+    }
+
+    .page-header strong { font-size: 17px; letter-spacing: -.01em; }
+    .page-header span { font-size: 9px; letter-spacing: .12em; text-transform: uppercase; opacity: .75; }
+
+    .page-two { padding: 7mm 13mm 10mm; }
+
+    .flow-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4mm;
+    }
+
+    .flow-card {
+      padding: 4mm;
+      border: 1px solid var(--line);
+      border-radius: 4mm;
+      background: white;
+      box-shadow: 0 4px 13px rgba(16, 42, 67, .07);
+    }
+
+    .flow-title {
+      display: flex;
+      gap: 2.5mm;
+      align-items: center;
+      margin-bottom: 3mm;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .flow-number {
+      display: grid;
+      width: 7mm;
+      height: 7mm;
+      place-items: center;
+      border-radius: 50%;
+      color: white;
+      background: var(--teal);
+      font-size: 10px;
+    }
+
+    .decision {
+      display: grid;
+      grid-template-columns: 35mm 1fr 1fr;
+      gap: 3mm;
+      align-items: stretch;
+      margin-top: 5mm;
+      padding: 4mm;
+      border-radius: 4mm;
+      color: white;
+      background: linear-gradient(120deg, #173f58, #0a6b64);
+    }
+
+    .decision-intro {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .decision-intro small {
+      margin-bottom: 1mm;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      opacity: .7;
+    }
+
+    .decision-intro strong { font-size: 14px; line-height: 1.2; }
+
+    .decision-option {
+      padding: 3mm;
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 3mm;
+      background: rgba(255,255,255,.10);
+    }
+
+    .decision-option b { display: block; margin-bottom: 1mm; color: #baf4d0; font-size: 10.5px; }
+    .decision-option:last-child b { color: #ffda85; }
+    .decision-option span { display: block; font-size: 8.8px; line-height: 1.4; opacity: .9; }
+
+    .lower-grid {
+      display: grid;
+      grid-template-columns: 1.08fr .92fr;
+      gap: 5mm;
+      margin-top: 5mm;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2mm;
+    }
+
+    .phase {
+      position: relative;
+      min-height: 29mm;
+      padding: 4mm 3mm 3mm;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 3mm;
+      background: var(--soft);
+    }
+
+    .phase::after {
+      position: absolute;
+      width: 12mm;
+      height: 12mm;
+      top: -5mm;
+      right: -5mm;
+      border-radius: 50%;
+      background: var(--teal);
+      content: "";
+      opacity: .12;
+    }
+
+    .phase:nth-child(2)::after { background: var(--azure); }
+    .phase:nth-child(3)::after { background: var(--violet); }
+    .phase:nth-child(4)::after { background: var(--orange); }
+    .phase small { color: var(--teal-dark); font-size: 8px; font-weight: 900; letter-spacing: .08em; }
+    .phase strong { display: block; margin: 1mm 0; font-size: 10px; line-height: 1.25; }
+    .phase span { display: block; color: var(--muted); font-size: 8.3px; line-height: 1.35; }
+
+    .facts {
+      display: grid;
+      gap: 2.5mm;
+    }
+
+    .fact {
+      display: grid;
+      grid-template-columns: 9mm 1fr;
+      gap: 3mm;
+      align-items: center;
+      padding: 3mm;
+      border-radius: 3mm;
+      background: #f3f8fb;
+    }
+
+    .fact-icon {
+      display: grid;
+      width: 9mm;
+      height: 9mm;
+      place-items: center;
+      border-radius: 2.5mm;
+      color: white;
+      background: var(--azure);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .fact:nth-child(2) .fact-icon { background: var(--orange); }
+    .fact:nth-child(3) .fact-icon { background: var(--violet); }
+    .fact strong { display: block; font-size: 10px; }
+    .fact span { display: block; color: var(--muted); font-size: 8.6px; line-height: 1.35; }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2.5mm;
+      margin-top: 5mm;
+    }
+
+    .action {
+      padding: 3mm;
+      border-left: 2px solid var(--teal);
+      background: #f5faf8;
+      font-size: 8.6px;
+      line-height: 1.35;
+    }
+
+    .action:nth-child(2) { border-color: var(--azure); }
+    .action:nth-child(3) { border-color: var(--violet); }
+    .action:nth-child(4) { border-color: var(--orange); }
+    .action strong { display: block; margin-bottom: .8mm; font-size: 9.5px; }
+
+    .page-footer {
+      position: absolute;
+      right: 13mm;
+      bottom: 6mm;
+      left: 13mm;
+      display: flex;
+      justify-content: space-between;
+      color: #7a8c9c;
+      font-size: 8px;
+    }
+
+    @page { size: A4; margin: 0; }
+
+    @media print {
+      html, body { background: white; }
+      body { padding: 0; }
+      .page {
+        width: 210mm;
+        height: 297mm;
+        min-height: 297mm;
+        margin: 0;
+        box-shadow: none;
+      }
+    }
+
+    @media screen and (max-width: 850px) {
+      body { padding: 0; }
+      .page {
+        width: 100%;
+        min-height: 0;
+        margin: 0;
+        box-shadow: none;
+      }
+      .metrics, .principles, .flow-grid, .lower-grid, .actions { grid-template-columns: 1fr; }
+      .metrics { margin-top: 5mm; }
+      .decision { grid-template-columns: 1fr; }
+      .timeline { grid-template-columns: 1fr 1fr; }
+      .page-footer { position: static; margin-top: 7mm; }
+    }
+  </style>
+</head>
+<body>
+  <section class="page">
+    <header class="hero">
+      <p class="eyebrow">Stakeholder solution brief</p>
+      <h1>SAL WhatsApp Support Assistant</h1>
+      <p class="hero-copy">Trusted, bilingual answers from SAL's Teacher Librarian Guide through the channel communities and staff already use.</p>
+    </header>
+
+    <main class="content">
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-icon">W</div>
+          <strong>WhatsApp-first</strong>
+          <span>Users ask questions by text or voice memo and receive concise, cited answers.</span>
+        </div>
+        <div class="metric">
+          <div class="metric-icon">Aa</div>
+          <strong>English + Kiswahili</strong>
+          <span>The assistant understands both languages and responds in the user's language.</span>
+        </div>
+        <div class="metric">
+          <div class="metric-icon">58</div>
+          <strong>Manual grounded</strong>
+          <span>Answers use 58 reviewed knowledge chunks from the 44-page SAL guide.</span>
+        </div>
+      </div>
+
+      <h2>Solution architecture</h2>
+      <p class="section-lead">A lightweight API coordinates WhatsApp, SAL's local knowledge and approved Azure AI services.</p>
+
+      <div class="diagram">
+        <svg viewBox="0 0 1050 480" role="img" aria-labelledby="arch-title arch-desc">
+          <title id="arch-title">SAL WhatsApp support assistant architecture</title>
+          <desc id="arch-desc">Users communicate through WhatsApp. The SAL API uses local manual and conversation data, Azure speech and GPT-5.6 Luna, then answers automatically or transfers to staff.</desc>
+          <defs>
+            <linearGradient id="userGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#25d366"/>
+              <stop offset="1" stop-color="#078f49"/>
+            </linearGradient>
+            <linearGradient id="apiGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#008c7a"/>
+              <stop offset="1" stop-color="#075f55"/>
+            </linearGradient>
+            <linearGradient id="azureGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#36a6f2"/>
+              <stop offset="1" stop-color="#006ac3"/>
+            </linearGradient>
+            <linearGradient id="localGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#8d6ddd"/>
+              <stop offset="1" stop-color="#5839a9"/>
+            </linearGradient>
+            <linearGradient id="staffGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#f5bd3d"/>
+              <stop offset="1" stop-color="#ef8122"/>
+            </linearGradient>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+              <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#173b50" flood-opacity=".16"/>
+            </filter>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#4f7184"/>
+            </marker>
+          </defs>
+
+          <path d="M190 225 H315" stroke="#4f7184" stroke-width="5" marker-end="url(#arrow)"/>
+          <path d="M540 225 H670" stroke="#4f7184" stroke-width="5" marker-end="url(#arrow)"/>
+          <path d="M425 167 V92 H670" fill="none" stroke="#4f7184" stroke-width="5" marker-end="url(#arrow)"/>
+          <path d="M425 283 V378 H670" fill="none" stroke="#4f7184" stroke-width="5" marker-end="url(#arrow)"/>
+          <path d="M872 225 H970 V378 H892" fill="none" stroke="#4f7184" stroke-width="5" marker-end="url(#arrow)"/>
+          <path d="M735 378 H565 V272" fill="none" stroke="#4f7184" stroke-width="4" stroke-dasharray="10 8" marker-end="url(#arrow)"/>
+
+          <g filter="url(#shadow)">
+            <rect x="25" y="165" width="165" height="120" rx="26" fill="url(#userGrad)"/>
+            <circle cx="74" cy="216" r="24" fill="rgba(255,255,255,.22)"/>
+            <path d="M61 215c0-9 6-16 14-16s14 7 14 16-6 16-14 16c-3 0-6-1-8-3l-9 3 3-9c0-2 0-4 0-7z" fill="none" stroke="white" stroke-width="4"/>
+            <text x="108" y="211" fill="white" font-size="22" font-weight="800">Users</text>
+            <text x="108" y="235" fill="#e8fff0" font-size="15">Text + voice</text>
+          </g>
+
+          <g filter="url(#shadow)">
+            <rect x="315" y="155" width="250" height="140" rx="26" fill="url(#apiGrad)"/>
+            <circle cx="370" cy="211" r="27" fill="rgba(255,255,255,.18)"/>
+            <path d="M354 211h32M370 195v32" stroke="white" stroke-width="5" stroke-linecap="round"/>
+            <text x="412" y="205" fill="white" font-size="24" font-weight="800">SAL API</text>
+            <text x="412" y="231" fill="#d8fff6" font-size="15">Rules · routing · validation</text>
+            <rect x="345" y="252" width="190" height="25" rx="12" fill="rgba(255,255,255,.13)"/>
+            <text x="440" y="270" fill="white" text-anchor="middle" font-size="13">Deterministic orchestration</text>
+          </g>
+
+          <g filter="url(#shadow)">
+            <rect x="670" y="25" width="300" height="120" rx="24" fill="url(#localGrad)"/>
+            <circle cx="721" cy="78" r="24" fill="rgba(255,255,255,.17)"/>
+            <path d="M708 65h26v30h-26zM713 73h16M713 80h16M713 87h12" fill="none" stroke="white" stroke-width="3"/>
+            <text x="762" y="72" fill="white" font-size="21" font-weight="800">Local knowledge + data</text>
+            <text x="762" y="97" fill="#eee9ff" font-size="14">Manual JSONL · SQLite history</text>
+            <text x="762" y="119" fill="#eee9ff" font-size="13">Stays with the SAL API service</text>
+          </g>
+
+          <g filter="url(#shadow)">
+            <rect x="670" y="165" width="300" height="120" rx="24" fill="url(#azureGrad)"/>
+            <circle cx="721" cy="219" r="24" fill="rgba(255,255,255,.17)"/>
+            <path d="M705 225l13-31 9 20h12l-18 28-7-17z" fill="white"/>
+            <text x="762" y="208" fill="white" font-size="21" font-weight="800">Azure AI</text>
+            <text x="762" y="234" fill="#e8f6ff" font-size="14">GPT-5.6 Luna · grounded answers</text>
+            <text x="762" y="256" fill="#e8f6ff" font-size="13">Speech transcription for voice</text>
+          </g>
+
+          <g filter="url(#shadow)">
+            <rect x="670" y="330" width="300" height="105" rx="24" fill="url(#staffGrad)"/>
+            <circle cx="721" cy="382" r="24" fill="rgba(255,255,255,.23)"/>
+            <circle cx="721" cy="374" r="8" fill="white"/>
+            <path d="M705 398c2-11 8-16 16-16s14 5 16 16" fill="white"/>
+            <text x="762" y="374" fill="white" font-size="21" font-weight="800">SAL staff handoff</text>
+            <text x="762" y="399" fill="#fff7e6" font-size="14">WhatsApp Coexistence or staff UI</text>
+          </g>
+
+          <text x="250" y="209" fill="#4f7184" font-size="13" font-weight="700">Webhook</text>
+          <text x="595" y="209" fill="#4f7184" font-size="13" font-weight="700">Prompt</text>
+          <text x="503" y="80" fill="#4f7184" font-size="13" font-weight="700">Read locally</text>
+          <text x="505" y="368" fill="#4f7184" font-size="13" font-weight="700">Handoff</text>
+        </svg>
+      </div>
+
+      <div class="principles">
+        <div class="principle"><strong>Grounded</strong><span>Answers use the approved SAL guide and include page citations.</span></div>
+        <div class="principle"><strong>Accessible</strong><span>Supports text, voice, English, Kiswahili and mixed-language questions.</span></div>
+        <div class="principle"><strong>Human backed</strong><span>Unsupported and sensitive enquiries move directly to SAL staff.</span></div>
+        <div class="principle"><strong>Lean start</strong><span>No vector database or agent framework is needed for the first release.</span></div>
+      </div>
+    </main>
+
+    <footer class="page-footer">
+      <span>SAL WhatsApp Support Assistant</span>
+      <span>Stakeholder brief · 1 / 2</span>
+    </footer>
+  </section>
+
+  <section class="page">
+    <header class="page-header">
+      <strong>Experience, handoff and delivery</strong>
+      <span>Prototype pathway</span>
+    </header>
+
+    <main class="page-two">
+      <div class="flow-grid">
+        <article class="flow-card">
+          <div class="flow-title"><span class="flow-number">1</span>User support flow</div>
+          <svg viewBox="0 0 500 180" role="img" aria-label="User support flow">
+            <defs>
+              <linearGradient id="flowA" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#25d366"/><stop offset="1" stop-color="#07974a"/></linearGradient>
+              <linearGradient id="flowB" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#36a6f2"/><stop offset="1" stop-color="#006ac3"/></linearGradient>
+              <linearGradient id="flowC" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8d6ddd"/><stop offset="1" stop-color="#5839a9"/></linearGradient>
+              <marker id="smallArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="#7890a1"/></marker>
+            </defs>
+            <path d="M104 78h49M244 78h49M384 78h42" stroke="#7890a1" stroke-width="4" marker-end="url(#smallArrow)"/>
+            <g>
+              <circle cx="65" cy="78" r="40" fill="url(#flowA)"/>
+              <path d="M50 72h30M50 84h21" stroke="white" stroke-width="5" stroke-linecap="round"/>
+              <text x="65" y="140" text-anchor="middle" fill="#193248" font-size="15" font-weight="800">Ask</text>
+              <text x="65" y="158" text-anchor="middle" fill="#60758a" font-size="12">Text or voice</text>
+            </g>
+            <g>
+              <circle cx="205" cy="78" r="40" fill="url(#flowB)"/>
+              <path d="M190 80l10 10 21-25" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="205" y="140" text-anchor="middle" fill="#193248" font-size="15" font-weight="800">Understand</text>
+              <text x="205" y="158" text-anchor="middle" fill="#60758a" font-size="12">Language + intent</text>
+            </g>
+            <g>
+              <circle cx="345" cy="78" r="40" fill="url(#flowC)"/>
+              <path d="M330 59h30v38h-30zM337 69h16M337 78h16M337 87h11" fill="none" stroke="white" stroke-width="4"/>
+              <text x="345" y="140" text-anchor="middle" fill="#193248" font-size="15" font-weight="800">Ground</text>
+              <text x="345" y="158" text-anchor="middle" fill="#60758a" font-size="12">Use SAL guide</text>
+            </g>
+            <g>
+              <circle cx="460" cy="78" r="34" fill="#f28c28"/>
+              <path d="M448 78l8 8 16-19" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="460" y="140" text-anchor="middle" fill="#193248" font-size="15" font-weight="800">Respond</text>
+              <text x="460" y="158" text-anchor="middle" fill="#60758a" font-size="12">Answer + citation</text>
+            </g>
+          </svg>
+        </article>
+
+        <article class="flow-card">
+          <div class="flow-title"><span class="flow-number">2</span>Human handoff flow</div>
+          <svg viewBox="0 0 500 180" role="img" aria-label="Human handoff flow">
+            <defs>
+              <linearGradient id="handA" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e75b52"/><stop offset="1" stop-color="#bc3835"/></linearGradient>
+              <linearGradient id="handB" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f5bd3d"/><stop offset="1" stop-color="#ed821f"/></linearGradient>
+              <linearGradient id="handC" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#25d366"/><stop offset="1" stop-color="#07974a"/></linearGradient>
+              <marker id="handArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="#7890a1"/></marker>
+            </defs>
+            <path d="M128 80h55M316 80h48" stroke="#7890a1" stroke-width="4" marker-end="url(#handArrow)"/>
+            <g>
+              <rect x="20" y="41" width="108" height="78" rx="18" fill="url(#handA)"/>
+              <text x="74" y="70" text-anchor="middle" fill="white" font-size="14" font-weight="800">Handoff</text>
+              <text x="74" y="91" text-anchor="middle" fill="#ffecea" font-size="11">Requested or</text>
+              <text x="74" y="106" text-anchor="middle" fill="#ffecea" font-size="11">recommended</text>
+            </g>
+            <g>
+              <rect x="184" y="32" width="132" height="96" rx="20" fill="url(#handB)"/>
+              <path d="M231 57h38v28h-22l-10 9v-9h-6z" fill="none" stroke="white" stroke-width="4"/>
+              <text x="250" y="110" text-anchor="middle" fill="white" font-size="14" font-weight="800">Bot pauses</text>
+            </g>
+            <g>
+              <rect x="365" y="41" width="115" height="78" rx="18" fill="url(#handC)"/>
+              <circle cx="422" cy="67" r="10" fill="white"/>
+              <path d="M404 94c3-12 9-18 18-18s15 6 18 18" fill="white"/>
+              <text x="422" y="110" text-anchor="middle" fill="white" font-size="14" font-weight="800">Staff replies</text>
+            </g>
+            <text x="250" y="154" text-anchor="middle" fill="#60758a" font-size="12">Conversation and audit history remain with the SAL service</text>
+          </svg>
+        </article>
+      </div>
+
+      <div class="decision">
+        <div class="decision-intro">
+          <small>Staff channel decision</small>
+          <strong>Keep the existing workflow where possible</strong>
+        </div>
+        <div class="decision-option">
+          <b>Coexistence-enabled number</b>
+          <span>Staff continue replying from WhatsApp Business while the API records message echoes and keeps the bot paused.</span>
+        </div>
+        <div class="decision-option">
+          <b>Coexistence unavailable</b>
+          <span>Provide a secure, lightweight staff chat interface that sends replies through the WhatsApp Cloud API.</span>
+        </div>
+      </div>
+
+      <div class="lower-grid">
+        <section>
+          <h2>Prototype delivery</h2>
+          <div class="timeline">
+            <div class="phase"><small>PHASE 1</small><strong>Local text demo</strong><span>Manual grounding, Azure LLM, citations and SQLite history.</span></div>
+            <div class="phase"><small>PHASE 2</small><strong>WhatsApp text</strong><span>Webhook, message delivery, deduplication and status handling.</span></div>
+            <div class="phase"><small>PHASE 3</small><strong>Voice input</strong><span>Secure audio download, Azure transcription and text answers.</span></div>
+            <div class="phase"><small>PHASE 4</small><strong>Staff handoff</strong><span>Coexistence or custom interface, followed by user evaluation.</span></div>
+          </div>
+        </section>
+
+        <section>
+          <h2>Why this approach</h2>
+          <div class="facts">
+            <div class="fact">
+              <span class="fact-icon">$</span>
+              <div><strong>Low initial cost</strong><span>Indicative Luna generation cost is about $3.30 per 1,000 answers at the current planning assumption.</span></div>
+            </div>
+            <div class="fact">
+              <span class="fact-icon">✓</span>
+              <div><strong>Fast and dependable</strong><span>The complete manual is supplied to the model, avoiding retrieval setup and retrieval misses.</span></div>
+            </div>
+            <div class="fact">
+              <span class="fact-icon">↗</span>
+              <div><strong>Ready to evolve</strong><span>Local hybrid retrieval can be introduced later as manuals, traffic or governance needs grow.</span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <h2>Decisions to unlock implementation</h2>
+      <div class="actions">
+        <div class="action"><strong>Azure services</strong>Confirm region and approved Luna and transcription deployments.</div>
+        <div class="action"><strong>WhatsApp number</strong>Confirm whether SAL's support number has Coexistence eligibility.</div>
+        <div class="action"><strong>Safeguarding</strong>Approve escalation rules, wording and human support ownership.</div>
+        <div class="action"><strong>Data policy</strong>Agree conversation, transcript, audio and audit retention periods.</div>
+      </div>
+    </main>
+
+    <footer class="page-footer">
+      <span>SAL WhatsApp Support Assistant</span>
+      <span>Stakeholder brief · 2 / 2 · September 14, 2026</span>
+    </footer>
+  </section>
+</body>
+</html>

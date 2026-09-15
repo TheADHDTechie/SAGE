@@ -1,0 +1,199 @@
+{
+  "info": {
+    "_postman_id": "164ba94a-132e-433f-bdde-d7b2908a9ae4",
+    "name": "SAL Support Assistant",
+    "description": "Exercises the SAL prototype before WhatsApp Cloud API setup is available.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-Test-Token",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{testToken}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "auth": { "type": "noauth" },
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Healthy', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ready",
+      "auth": { "type": "noauth" },
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/ready"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Ready with 58 chunks', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().manualChunks).to.eql(58);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "English question",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"externalMessageId\":\"{{$guid}}\",\"externalUserId\":\"{{userId}}\",\"type\":\"text\",\"text\":\"How should I set up a child-friendly library space?\"}"
+        },
+        "url": "{{baseUrl}}/api/test/messages"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Returns grounded answer', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.eql('answered');",
+              "  pm.expect(body.citations.length).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Kiswahili question",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"externalMessageId\":\"{{$guid}}\",\"externalUserId\":\"postman-user-sw\",\"type\":\"text\",\"text\":\"Ninawezaje kupanga vitabu katika maktaba kwa watoto?\"}"
+        },
+        "url": "{{baseUrl}}/api/test/messages"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Returns Kiswahili result', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().language).to.eql('sw');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Human handoff",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"externalMessageId\":\"{{$guid}}\",\"externalUserId\":\"postman-handoff-user\",\"type\":\"text\",\"text\":\"I want to speak with a SAL staff member\"}"
+        },
+        "url": "{{baseUrl}}/api/test/messages"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Creates handoff', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().status).to.eql('handoff');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Duplicate message",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"externalMessageId\":\"fixed-duplicate-message\",\"externalUserId\":\"postman-duplicate-user\",\"type\":\"text\",\"text\":\"How should books be organized?\"}"
+        },
+        "url": "{{baseUrl}}/api/test/messages"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const body = pm.response.json();",
+              "pm.test('First call answers and second call deduplicates', function () {",
+              "  pm.expect(['answered', 'duplicate']).to.include(body.status);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Voice fixture",
+      "request": {
+        "method": "POST",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "externalMessageId", "value": "{{$guid}}", "type": "text" },
+            { "key": "externalUserId", "value": "postman-voice-user", "type": "text" },
+            {
+              "key": "audio",
+              "description": "In mock mode choose a UTF-8 text file containing the transcript. In Azure mode choose an audio file.",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/api/test/messages/voice"
+      }
+    }
+  ]
+}

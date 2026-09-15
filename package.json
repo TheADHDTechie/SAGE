@@ -1,0 +1,42 @@
+{
+  "name": "sal-whatsapp-support",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "SAL WhatsApp support assistant prototype",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "ask": "tsx scripts/ask.ts",
+    "reset-conversation": "tsx scripts/reset-conversation.ts",
+    "generate:cases": "tsx scripts/generate-synthetic-cases.ts",
+    "eval:synthetic": "tsx scripts/run-synthetic-evaluation.ts"
+  },
+  "keywords": [
+    "whatsapp",
+    "support",
+    "azure-ai",
+    "ngo"
+  ],
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@azure/identity": "^4.13.2",
+    "@fastify/multipart": "^9.4.0",
+    "better-sqlite3": "^11.10.0",
+    "dotenv": "^17.4.2",
+    "fastify": "^5.12.3",
+    "openai": "^7.10.0",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.5.0",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  }
+}

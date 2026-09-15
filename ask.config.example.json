@@ -1,0 +1,5 @@
+{
+  "baseUrl": "http://127.0.0.1:3000",
+  "userId": "local-cli-user",
+  "testToken": "replace-with-the-TEST_API_TOKEN-from-.env"
+}

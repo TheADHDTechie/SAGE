@@ -1,0 +1,1170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Solution design for the SAL WhatsApp support assistant.">
+  <title>SAL WhatsApp Support Assistant - Solution Design</title>
+  <style>:root {
+  --ink: #17352c;
+  --muted: #5d6f69;
+  --paper: #ffffff;
+  --page: #eef5f1;
+  --brand: #087f5b;
+  --brand-dark: #075f46;
+  --brand-soft: #dff4ea;
+  --accent: #f4a261;
+  --border: #cfddd7;
+  --code: #102a24;
+  --shadow: 0 14px 38px rgba(16, 54, 42, 0.10);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--page);
+  font: 16px/1.65 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+a { color: var(--brand-dark); }
+.shell { display: grid; grid-template-columns: 290px minmax(0, 1fr); min-height: 100vh; }
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+  padding: 28px 22px;
+  color: white;
+  background: linear-gradient(165deg, #0b5d46, #123c33);
+}
+.sidebar .eyebrow { margin: 0 0 8px; color: #aee6d0; font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.sidebar h2 { margin: 0 0 8px; color: white; font-size: 22px; line-height: 1.25; }
+.sidebar .meta { margin: 0 0 24px; color: #d2e7df; font-size: 13px; }
+#toc { display: grid; gap: 3px; }
+#toc a { padding: 7px 9px; border-radius: 7px; color: #d9eee6; font-size: 13px; line-height: 1.35; text-decoration: none; }
+#toc a:hover, #toc a.active { color: white; background: rgba(255,255,255,.12); }
+.content-wrap { min-width: 0; padding: 42px clamp(20px, 5vw, 76px) 80px; }
+article {
+  width: min(1050px, 100%);
+  margin: 0 auto;
+  padding: clamp(28px, 5vw, 64px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+h1 { margin: 0 0 18px; color: var(--brand-dark); font-size: clamp(34px, 5vw, 54px); line-height: 1.05; letter-spacing: -.035em; }
+h2 { margin: 58px 0 18px; padding-top: 10px; border-top: 2px solid var(--brand-soft); color: var(--brand-dark); font-size: 28px; line-height: 1.25; }
+h3 { margin: 34px 0 12px; color: var(--brand); font-size: 21px; line-height: 1.3; }
+p, li { max-width: 82ch; }
+li + li { margin-top: 4px; }
+strong { color: #0b4938; }
+code { padding: .12em .34em; border-radius: 5px; background: #e7f2ed; color: #164c3c; font: .9em ui-monospace, SFMono-Regular, Consolas, monospace; }
+pre { overflow: auto; margin: 20px 0; padding: 20px; border-radius: 12px; color: #e7fff5; background: var(--code); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+pre code { padding: 0; color: inherit; background: transparent; font-size: 13px; line-height: 1.55; }
+table { width: 100%; margin: 22px 0; border-collapse: collapse; font-size: 14px; }
+th { color: white; background: var(--brand-dark); text-align: left; }
+th, td { padding: 11px 13px; border: 1px solid var(--border); vertical-align: top; }
+tbody tr:nth-child(even) { background: #f4f9f6; }
+.diagram {
+  overflow: auto;
+  margin: 26px 0;
+  padding: 28px;
+  border: 2px solid #8bc8d1;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(37, 211, 102, .10), transparent 24%),
+    radial-gradient(circle at 92% 14%, rgba(0, 120, 212, .12), transparent 28%),
+    linear-gradient(145deg, #ffffff, #eaf6f6);
+  box-shadow: 0 12px 30px rgba(14, 84, 91, .13);
+}
+.architecture-svg {
+  display: block;
+  width: 100%;
+  min-width: 700px;
+  height: auto;
+  margin: auto;
+  filter: saturate(1.25) contrast(1.08);
+}
+
+/* Mermaid's neutral theme is intentionally overridden for stronger on-screen and print contrast. */
+.diagram .node rect,
+.diagram .node polygon,
+.diagram .node circle,
+.diagram .node path {
+  stroke: #103d4a !important;
+  stroke-width: 2.8px !important;
+  filter: drop-shadow(0 5px 5px rgba(16, 42, 67, .20));
+}
+.diagram .nodeLabel,
+.diagram .nodeLabel p,
+.diagram .nodeLabel span,
+.diagram .label,
+.diagram .label p {
+  color: #ffffff !important;
+  font-weight: 650 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .28);
+}
+.diagram-1 .nodeLabel p {
+  font-size: 14px !important;
+}
+.diagram .cluster rect {
+  fill: rgba(255, 255, 255, .88) !important;
+  stroke: #7caeba !important;
+  stroke-width: 2px !important;
+}
+.diagram .cluster-label,
+.diagram .cluster-label p,
+.diagram .cluster-label span {
+  color: #17465a !important;
+  font-weight: 850 !important;
+  text-shadow: none !important;
+}
+.diagram .flowchart-link,
+.diagram .messageLine0,
+.diagram .messageLine1,
+.diagram .actor-line {
+  stroke: #185b70 !important;
+  stroke-width: 3px !important;
+}
+.diagram marker path,
+.diagram marker polygon {
+  fill: #185b70 !important;
+  stroke: #185b70 !important;
+}
+.diagram .edgeLabel {
+  color: #123b4a !important;
+  font-weight: 800 !important;
+  background: transparent !important;
+}
+.diagram .edgeLabel p,
+.diagram .edgeLabel span {
+  padding: 3px 7px !important;
+  border: 1px solid #86bec9;
+  border-radius: 6px;
+  color: #123b4a !important;
+  background: #ffffff !important;
+  text-shadow: none;
+}
+.diagram .edgeLabel text {
+  fill: #123b4a !important;
+  font-weight: 800 !important;
+}
+
+/* High-level architecture: colors communicate component ownership and role. */
+.diagram-1 [id*="flowchart-User-"] > rect,
+.diagram-1 [id*="flowchart-Meta-"] > rect,
+.diagram-1 [id*="flowchart-WABA-"] > rect {
+  fill: #119b55 !important;
+}
+.diagram-1 [id*="flowchart-API-"] > rect,
+.diagram-1 [id*="flowchart-Router-"] > rect,
+.diagram-1 [id*="flowchart-Prompt-"] > rect,
+.diagram-1 [id*="flowchart-Validator-"] > rect {
+  fill: #087f73 !important;
+}
+.diagram-1 [id*="flowchart-Speech-"] > rect,
+.diagram-1 [id*="flowchart-Luna-"] > rect {
+  fill: #0878c9 !important;
+}
+.diagram-1 [id*="flowchart-Manual-"] > path,
+.diagram-1 [id*="flowchart-History-"] > path {
+  fill: #6847bd !important;
+}
+.diagram-1 [id*="flowchart-Handoff-"] > polygon {
+  fill: #e68022 !important;
+}
+.diagram-1 [id*="flowchart-Inbox-"] > rect {
+  fill: #d95f38 !important;
+}
+
+/* Sequence diagrams use a vivid Azure/WhatsApp palette. */
+.diagram text.actor,
+.diagram text.actor > tspan {
+  fill: #ffffff !important;
+  font-weight: 800 !important;
+}
+.diagram rect.actor {
+  fill: #087f73 !important;
+  stroke: #075a52 !important;
+  stroke-width: 2.5px !important;
+}
+.diagram .messageText {
+  fill: #14394a !important;
+  font-weight: 650 !important;
+}
+.diagram .labelBox {
+  fill: #ffe3a0 !important;
+  stroke: #d67915 !important;
+  stroke-width: 2px !important;
+}
+.diagram .labelText,
+.diagram .loopText {
+  fill: #6b3b05 !important;
+  font-weight: 800 !important;
+}
+.diagram .activation0,
+.diagram .activation1,
+.diagram .activation2 {
+  fill: #9cddff !important;
+  stroke: #0878c9 !important;
+}
+article > p:first-of-type { font-size: 18px; }
+.footer { margin: 26px auto 0; color: var(--muted); font-size: 13px; text-align: center; }
+@media (max-width: 900px) {
+  .shell { display: block; }
+  .sidebar { position: static; height: auto; padding: 20px; }
+  #toc { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .content-wrap { padding: 18px; }
+  article { padding: 24px 20px; border-radius: 12px; }
+  h2 { margin-top: 42px; }
+}
+@media print {
+  body { background: white; font-size: 11pt; }
+  .shell { display: block; }
+  .sidebar, .footer { display: none; }
+  .content-wrap, article { width: auto; margin: 0; padding: 0; border: 0; box-shadow: none; }
+  h1, h2, h3 { break-after: avoid; }
+  pre, table, .diagram { break-inside: avoid; }
+  .architecture-svg { min-width: 0; }
+}</style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <p class="eyebrow">Solution Design</p>
+      <h2>SAL WhatsApp Support Assistant</h2>
+      <p class="meta">Draft prototype design<br>September 15, 2026</p>
+      <nav id="toc" aria-label="Document sections"></nav>
+    </aside>
+    <main class="content-wrap">
+      <article><h1>SAL WhatsApp Support Assistant - Solution Design</h1>
+<p><strong>Status:</strong> Draft for prototype implementation<br><strong>Date:</strong> September 15, 2026<br><strong>Audience:</strong> SAL product, program, engineering, safeguarding, and operations teams</p>
+<h2>1. Executive summary</h2>
+<p>This document describes an initial support assistant for Start A Library Trust (SAL).
+End users ask questions through WhatsApp using text or voice messages. The assistant
+answers from the SAL Teacher Librarian Guide, responds in English or Kiswahili, cites
+the relevant manual pages, and transfers unsupported or sensitive requests to a human.</p>
+<p>The initial prototype uses:</p>
+<ul>
+<li>Meta WhatsApp Cloud API for messaging.</li>
+<li>WhatsApp Business App Coexistence for staff handoff when SAL has an eligible
+Coexistence-enabled business number.</li>
+<li>A Node.js and TypeScript API service.</li>
+<li>GPT-5.6 Luna deployed in Microsoft Foundry for language understanding and grounded
+answer generation.</li>
+<li>MAI-Transcribe-2 or Azure Speech for English and Kiswahili voice transcription.</li>
+<li>The complete processed manual supplied to the LLM on each request.</li>
+<li>Local SQLite storage for conversations, message state, feedback, and audit events.</li>
+<li>The existing <code>knowledge-base\sal\data\sal-guide-chunks.jsonl</code> file as the authoritative knowledge
+source.</li>
+</ul>
+<p>The prototype deliberately avoids an agent framework, embedding service, vector
+database, and distributed job infrastructure. The manual is small enough to fit in
+the model context, and expected initial traffic is low. Components are isolated behind
+interfaces so local hybrid retrieval can be added later without changing WhatsApp or
+conversation behavior.</p>
+<h2>2. Goals</h2>
+<p>The prototype must:</p>
+<ol>
+<li>Receive WhatsApp text and voice messages.</li>
+<li>Answer questions using only the approved SAL manual.</li>
+<li>Support English, Kiswahili, and mixed-language enquiries.</li>
+<li>Respond in the user&#39;s language using concise WhatsApp-friendly text.</li>
+<li>Cite the manual chapter and PDF page range for factual answers.</li>
+<li>Refuse to invent answers when the manual is insufficient.</li>
+<li>Transfer conversations to a human when requested or required.</li>
+<li>Apply deterministic safeguarding and emergency routing rules.</li>
+<li>Keep the manual, conversation history, identifiers, and operational data local to
+the API service.</li>
+<li>Keep the Azure model deployment replaceable through configuration.</li>
+</ol>
+<h2>3. Constraints and assumptions</h2>
+<ul>
+<li>The prototype uses the processed 44-page SAL Teacher Librarian Guide knowledge bundle
+with 57 semantic sections and 58 chunks; five image-transcribed appendix chunks
+require final human proofing.</li>
+<li>Initial user volume is low enough that one Azure generation call per normal message
+is acceptable.</li>
+<li>The API service has persistent local disk or an attached persistent volume.</li>
+<li>The public deployment provides HTTPS endpoints reachable by Meta webhooks.</li>
+<li>Continuing to use WhatsApp for staff replies requires a WhatsApp Business number
+eligible for the Coexistence feature. If SAL does not have such a number, the
+prototype requires a protected custom staff chat interface for human replies.</li>
+</ul>
+<h2>4. Key architecture decisions</h2>
+<h3>4.1 Use full-manual context for the MVP</h3>
+<p>The API sends all 58 structured manual chunks to GPT-5.6 Luna with each user question.
+This avoids retrieval misses and removes the need for embeddings, a vector index, query
+rewriting, and reranking.</p>
+<p>The API preserves chunk boundaries and metadata:</p>
+<pre><code class="language-text">&lt;manual_chunk
+  id=&quot;sal-0423ac330bdd&quot;
+  title=&quot;Setting Up a Child-Friendly Library Space&quot;
+  chapter=&quot;Chapter 2: Practical School Library Operations&quot;
+  pages=&quot;8-9&quot;
+  language=&quot;en&quot;
+&gt;
+...
+&lt;/manual_chunk&gt;
+</code></pre>
+<p>This is preferred for the prototype because the corpus is small, implementation is
+simple, and the absolute model cost remains low at the expected volume.</p>
+<h3>4.2 Use deterministic orchestration rather than an agent</h3>
+<p>Application code controls every step. The LLM cannot decide to call arbitrary tools,
+send messages, access files, or update state.</p>
+<pre><code class="language-text">Receive message
+-&gt; validate and deduplicate
+-&gt; apply routing rules
+-&gt; transcribe when needed
+-&gt; construct grounded prompt
+-&gt; invoke Azure LLM
+-&gt; validate structured result
+-&gt; send answer or create handoff
+</code></pre>
+<p>This provides predictable behavior, simpler testing, explicit failure handling, and a
+clear audit trail.</p>
+<h3>4.3 Keep business data local to the API service</h3>
+<p>The complete manual, WhatsApp identifiers, message history, staff notes, feedback, and
+audit records remain in local files or SQLite. Azure receives only the minimum context
+required to process the current request.</p>
+<h3>4.4 Respond to voice messages with text initially</h3>
+<p>Voice input is transcribed, but the initial response is text. Text responses are easier
+to review, cite, search, and audit. Azure text-to-speech and WhatsApp voice responses
+can be added later.</p>
+<h2>5. High-level architecture</h2>
+<div class="diagram diagram-1" role="img" aria-label="Architecture diagram 1"><svg class="architecture-svg large-format-architecture" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1320" role="img" aria-labelledby="title description">
+  <title id="title">SAL WhatsApp support assistant architecture</title>
+  <desc id="description">A vertical architecture flow from WhatsApp user through the SAL API, routing, voice transcription, prompt construction, local knowledge, GPT-5.6 Luna, response validation, and automatic answer or staff handoff.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4fff9"/>
+      <stop offset=".52" stop-color="#f7fbff"/>
+      <stop offset="1" stop-color="#edf4ff"/>
+    </linearGradient>
+    <linearGradient id="whatsapp" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#25d366"/>
+      <stop offset="1" stop-color="#078b48"/>
+    </linearGradient>
+    <linearGradient id="service" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0ca08e"/>
+      <stop offset="1" stop-color="#00695c"/>
+    </linearGradient>
+    <linearGradient id="azure" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b9aef"/>
+      <stop offset="1" stop-color="#0067b9"/>
+    </linearGradient>
+    <linearGradient id="local" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8a67dc"/>
+      <stop offset="1" stop-color="#5834ad"/>
+    </linearGradient>
+    <linearGradient id="handoff" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffb13b"/>
+      <stop offset="1" stop-color="#eb701d"/>
+    </linearGradient>
+    <linearGradient id="custom" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f16f54"/>
+      <stop offset="1" stop-color="#c94235"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#123c50" flood-opacity=".20"/>
+    </filter>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0L8 4 0 8z" fill="#17627a"/>
+    </marker>
+    <style>
+      .node { filter: url(#shadow); stroke: #123d4d; stroke-width: 2.5; }
+      .title { font: 800 19px "Segoe UI", Arial, sans-serif; fill: #fff; }
+      .detail { font: 600 14px "Segoe UI", Arial, sans-serif; fill: #eafff8; }
+      .band-title { font: 800 17px "Segoe UI", Arial, sans-serif; fill: #174b5d; letter-spacing: .04em; }
+      .edge { fill: none; stroke: #17627a; stroke-width: 2.25; marker-end: url(#arrow); }
+      .return-edge { fill: none; stroke: #17627a; stroke-width: 1.8; stroke-dasharray: 8 7; marker-end: url(#arrow); }
+      .edge-label { font: 800 14px "Segoe UI", Arial, sans-serif; fill: #174b5d; }
+      .label-bg { fill: #fff; stroke: #7fb9c6; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <rect x="10" y="10" width="1180" height="1300" rx="30" fill="url(#background)" stroke="#63bdc8" stroke-width="3"/>
+
+  <text x="48" y="55" class="band-title">USER CHANNEL</text>
+  <rect x="35" y="72" width="1130" height="235" rx="22" fill="#e9fff2" stroke="#71c993" stroke-width="2"/>
+
+  <rect class="node" x="420" y="98" width="360" height="70" rx="18" fill="url(#whatsapp)"/>
+  <text x="600" y="127" text-anchor="middle" class="title">WhatsApp user</text>
+  <text x="600" y="151" text-anchor="middle" class="detail">Text question or voice memo</text>
+
+  <path class="edge" d="M600 168V207"/>
+
+  <rect class="node" x="420" y="212" width="360" height="70" rx="18" fill="url(#whatsapp)"/>
+  <text x="600" y="241" text-anchor="middle" class="title">Meta WhatsApp Cloud API</text>
+  <text x="600" y="265" text-anchor="middle" class="detail">Receives and sends messages</text>
+
+  <text x="48" y="350" class="band-title">SAL SUPPORT WORKFLOW</text>
+  <rect x="35" y="367" width="1130" height="700" rx="22" fill="#f7fcff" stroke="#75acc3" stroke-width="2"/>
+
+  <path class="edge" d="M600 282V398"/>
+  <rect class="label-bg" x="623" y="325" width="112" height="28" rx="8"/>
+  <text x="679" y="345" text-anchor="middle" class="edge-label">Webhook</text>
+
+  <rect class="node" x="420" y="403" width="360" height="70" rx="18" fill="url(#service)"/>
+  <text x="600" y="432" text-anchor="middle" class="title">SAL API service</text>
+  <text x="600" y="456" text-anchor="middle" class="detail">Orchestration, policy and audit</text>
+
+  <path class="edge" d="M600 473V512"/>
+
+  <rect class="node" x="390" y="517" width="420" height="78" rx="18" fill="url(#service)"/>
+  <text x="600" y="548" text-anchor="middle" class="title">Rules and conversation router</text>
+  <text x="600" y="574" text-anchor="middle" class="detail">Language, safety, conversation state and handoff checks</text>
+
+  <path class="edge" d="M510 595V630H265V665"/>
+  <rect class="label-bg" x="354" y="614" width="66" height="28" rx="8"/>
+  <text x="387" y="634" text-anchor="middle" class="edge-label">Voice</text>
+
+  <rect class="node" x="90" y="670" width="350" height="78" rx="18" fill="url(#azure)"/>
+  <text x="265" y="701" text-anchor="middle" class="title">Azure Speech / MAI-Transcribe-2</text>
+  <text x="265" y="727" text-anchor="middle" class="detail">Converts a voice memo to text</text>
+
+  <path class="edge" d="M690 595V665"/>
+  <rect class="label-bg" x="707" y="614" width="58" height="28" rx="8"/>
+  <text x="736" y="634" text-anchor="middle" class="edge-label">Text</text>
+
+  <rect class="node" x="480" y="670" width="300" height="78" rx="18" fill="url(#service)"/>
+  <text x="630" y="701" text-anchor="middle" class="title">Prompt builder</text>
+  <text x="630" y="727" text-anchor="middle" class="detail">Question, history and manual</text>
+
+  <path class="edge" d="M440 709H480"/>
+
+  <rect class="node" x="835" y="648" width="140" height="74" rx="18" fill="url(#local)"/>
+  <text x="905" y="678" text-anchor="middle" class="title">Manual</text>
+  <text x="905" y="702" text-anchor="middle" class="detail">58 chunks</text>
+
+  <rect class="node" x="835" y="742" width="140" height="74" rx="18" fill="url(#local)"/>
+  <text x="905" y="772" text-anchor="middle" class="title">SQLite</text>
+  <text x="905" y="796" text-anchor="middle" class="detail">Local state</text>
+
+  <path class="edge" d="M835 685H810V695H780"/>
+  <path class="edge" d="M835 779H810V725H780"/>
+
+  <path class="edge" d="M630 748V795"/>
+
+  <rect class="node" x="480" y="800" width="300" height="78" rx="18" fill="url(#azure)"/>
+  <text x="630" y="831" text-anchor="middle" class="title">GPT-5.6 Luna</text>
+  <text x="630" y="857" text-anchor="middle" class="detail">Grounded English or Kiswahili answer</text>
+
+  <path class="edge" d="M630 878V925"/>
+
+  <rect class="node" x="450" y="930" width="360" height="78" rx="18" fill="url(#service)"/>
+  <text x="630" y="961" text-anchor="middle" class="title">Response and citation validator</text>
+  <text x="630" y="987" text-anchor="middle" class="detail">Checks evidence, schema and policy</text>
+
+  <path class="return-edge" d="M810 969H1080V247H780"/>
+  <rect class="label-bg" x="895" y="945" width="154" height="28" rx="8"/>
+  <text x="972" y="965" text-anchor="middle" class="edge-label">Supported answer</text>
+
+  <text x="48" y="1110" class="band-title">HUMAN SUPPORT</text>
+  <rect x="35" y="1127" width="1130" height="155" rx="22" fill="#fff9eb" stroke="#e7a94b" stroke-width="2"/>
+
+  <path class="edge" d="M630 1008V1138"/>
+  <rect class="label-bg" x="651" y="1052" width="128" height="28" rx="8"/>
+  <text x="715" y="1072" text-anchor="middle" class="edge-label">Needs a person</text>
+
+  <polygon class="node" points="600,1147 695,1194 600,1241 505,1194" fill="url(#handoff)"/>
+  <text x="600" y="1188" text-anchor="middle" class="title">Coexistence</text>
+  <text x="600" y="1212" text-anchor="middle" class="detail">available?</text>
+
+  <path class="edge" d="M505 1194H400"/>
+  <rect class="label-bg" x="435" y="1168" width="48" height="26" rx="8"/>
+  <text x="459" y="1187" text-anchor="middle" class="edge-label">Yes</text>
+
+  <rect class="node" x="65" y="1157" width="335" height="74" rx="18" fill="url(#whatsapp)"/>
+  <text x="232" y="1187" text-anchor="middle" class="title">WhatsApp Business app</text>
+  <text x="232" y="1212" text-anchor="middle" class="detail">SAL staff reply in WhatsApp</text>
+
+  <path class="edge" d="M695 1194H800"/>
+  <rect class="label-bg" x="716" y="1168" width="44" height="26" rx="8"/>
+  <text x="738" y="1187" text-anchor="middle" class="edge-label">No</text>
+
+  <rect class="node" x="800" y="1157" width="335" height="74" rx="18" fill="url(#custom)"/>
+  <text x="967" y="1187" text-anchor="middle" class="title">Custom staff chat interface</text>
+  <text x="967" y="1212" text-anchor="middle" class="detail">Used when Coexistence is unavailable</text>
+
+  <path class="return-edge" d="M232 1157V1090H45V247H420"/>
+  <path class="return-edge" d="M967 1157V1082H1128V247H780"/>
+</svg>
+</div><h2>6. Component design</h2>
+<h3>6.1 WhatsApp adapter</h3>
+<p>Responsibilities:</p>
+<ul>
+<li>Verify webhook subscription challenges.</li>
+<li>Validate incoming webhook authenticity according to Meta requirements.</li>
+<li>Parse text, audio, contact, and message identifiers.</li>
+<li>Deduplicate incoming message IDs.</li>
+<li>Retrieve voice-media metadata and download audio using authorized Meta endpoints.</li>
+<li>Send text responses.</li>
+<li>Record delivery and failure status updates.</li>
+</ul>
+<p>The adapter exposes provider-neutral application types:</p>
+<pre><code class="language-ts">interface IncomingSupportMessage {
+  providerMessageId: string;
+  contactId: string;
+  type: &quot;text&quot; | &quot;voice&quot;;
+  text?: string;
+  mediaId?: string;
+  receivedAt: string;
+}
+
+interface MessagingProvider {
+  downloadAudio(mediaId: string): Promise&lt;DownloadedAudio&gt;;
+  sendText(contactId: string, text: string): Promise&lt;SentMessage&gt;;
+}
+</code></pre>
+<h3>6.2 Conversation service</h3>
+<p>Responsibilities:</p>
+<ul>
+<li>Find or create the active conversation.</li>
+<li>Maintain <code>bot</code>, <code>waiting_for_human</code>, <code>human</code>, and <code>closed</code> states.</li>
+<li>Load a limited number of recent messages.</li>
+<li>Pause automated replies while a human owns the conversation.</li>
+<li>Store inbound, generated, and staff messages.</li>
+<li>Store model results, citations, feedback, and failure reasons.</li>
+</ul>
+<h3>6.3 Rules and policy router</h3>
+<p>Rules run before the LLM and take precedence over generated output.</p>
+<p>Initial deterministic rules:</p>
+<ul>
+<li>Explicit request for a human.</li>
+<li>Stop or opt-out request.</li>
+<li>Conversation already assigned to a human.</li>
+<li>Empty or unsupported media.</li>
+<li>Audio exceeding configured duration or size.</li>
+<li>Repeated processing of the same provider message ID.</li>
+<li>Approved safeguarding and emergency keywords or flows.</li>
+</ul>
+<p>The LLM may recommend handoff, but only the application changes conversation state.</p>
+<h3>6.4 Speech transcription service</h3>
+<p>Primary implementation:</p>
+<ul>
+<li>MAI-Transcribe-2 in Azure Speech where available and approved.</li>
+<li>Azure Speech with <code>en-KE</code> and <code>sw-KE</code> support as fallback.</li>
+</ul>
+<p>Responsibilities:</p>
+<ul>
+<li>Validate MIME type, size, and configured duration.</li>
+<li>Save audio under a random temporary filename.</li>
+<li>Transcribe English, Kiswahili, or mixed-language speech.</li>
+<li>Return transcript text and detected language when available.</li>
+<li>Delete the temporary recording after processing.</li>
+<li>Reject empty or unusable transcripts.</li>
+</ul>
+<pre><code class="language-ts">interface SpeechTranscriber {
+  transcribe(input: {
+    bytes: Uint8Array;
+    mimeType: string;
+    candidateLocales: string[];
+  }): Promise&lt;{
+    text: string;
+    locale?: string;
+  }&gt;;
+}
+</code></pre>
+<p>For safeguarding concerns, names, dates, phone numbers, or other consequential details,
+the assistant asks the user to confirm the transcript before relying on it.</p>
+<h3>6.5 Knowledge repository</h3>
+<p>The authoritative source is:</p>
+<pre><code class="language-text">knowledge-base\sal\data\sal-guide-chunks.jsonl
+</code></pre>
+<p>The service loads and validates this file at startup. Every record must contain:</p>
+<ul>
+<li><code>id</code></li>
+<li><code>title</code></li>
+<li><code>chapter</code></li>
+<li><code>section</code></li>
+<li><code>topic</code></li>
+<li><code>tags</code></li>
+<li><code>content_type</code></li>
+<li><code>language</code></li>
+<li><code>page_start</code></li>
+<li><code>page_end</code></li>
+<li><code>text</code></li>
+</ul>
+<p>Startup must fail visibly if:</p>
+<ul>
+<li>the file is missing;</li>
+<li>a JSON line is invalid;</li>
+<li>chunk IDs are duplicated;</li>
+<li>required metadata is absent;</li>
+<li>a page range is invalid.</li>
+</ul>
+<p>The repository creates a stable, bounded manual-context string once at startup and
+reuses it for requests.</p>
+<h3>6.6 LLM gateway</h3>
+<p>The LLM gateway hides Azure SDK and deployment details:</p>
+<pre><code class="language-ts">interface LanguageModelGateway {
+  answerSupportQuestion(input: {
+    question: string;
+    inputLanguage?: string;
+    recentMessages: ChatMessage[];
+    manualContext: string;
+  }): Promise&lt;SupportModelResult&gt;;
+}
+</code></pre>
+<p>Configuration:</p>
+<pre><code class="language-env">AZURE_AI_ENDPOINT=
+AZURE_AI_API_KEY=
+AZURE_LLM_DEPLOYMENT=gpt-5.6-luna
+AZURE_LLM_REASONING_EFFORT=low
+AZURE_LLM_MAX_OUTPUT_TOKENS=600
+</code></pre>
+<p>The implementation uses an Azure SDK supported by the selected deployment. No
+model-specific behavior should leak into the conversation or WhatsApp adapters.</p>
+<h3>6.7 Prompt builder</h3>
+<p>The prompt contains:</p>
+<ol>
+<li>SAL assistant role and scope.</li>
+<li>Safeguarding and refusal instructions.</li>
+<li>Response-language instructions.</li>
+<li>Recent conversation messages.</li>
+<li>All structured manual chunks.</li>
+<li>The current user message or voice transcript.</li>
+<li>A strict structured-output schema.</li>
+</ol>
+<p>Core instructions:</p>
+<pre><code class="language-text">- Answer only from the supplied manual chunks.
+- Respond in the user&#39;s language.
+- Keep the answer concise and suitable for WhatsApp.
+- Preserve names, numbers, schedules, requirements, and procedures exactly.
+- Cite only chunk IDs included in the supplied manual.
+- If the manual is insufficient, set supported=false.
+- Do not make safeguarding, eligibility, legal, medical, or financial decisions.
+- Recommend human handoff when the request requires individual judgment.
+</code></pre>
+<h3>6.8 Response validator</h3>
+<p>Expected model output:</p>
+<pre><code class="language-ts">interface SupportModelResult {
+  language: &quot;en&quot; | &quot;sw&quot; | &quot;mixed&quot; | &quot;unknown&quot;;
+  answer: string;
+  supported: boolean;
+  citedChunkIds: string[];
+  requiresHuman: boolean;
+  handoffReason?: string;
+}
+</code></pre>
+<p>Local validation must confirm:</p>
+<ul>
+<li>The response matches the schema.</li>
+<li>Every cited chunk ID exists.</li>
+<li>Supported factual answers include at least one citation.</li>
+<li>The answer length is within the configured limit.</li>
+<li>Unsupported answers do not present manual-derived claims as confirmed facts.</li>
+<li>Human handoff is created when <code>requiresHuman</code> is true.</li>
+</ul>
+<p>If validation fails, the service sends a safe fallback and records the model response
+for engineering review. It does not send malformed or ungrounded content.</p>
+<h3>6.9 Human handoff channel</h3>
+<p>The preferred prototype handoff preserves SAL&#39;s existing staff workflow through
+WhatsApp Business App Coexistence.</p>
+<p>With Coexistence, the same SAL business number is connected to:</p>
+<pre><code class="language-text">WhatsApp Business app used by SAL staff
+                    +
+WhatsApp Cloud API used by the assistant
+</code></pre>
+<p>The required flow is:</p>
+<pre><code class="language-text">Bot determines that handoff is required
+-&gt; API changes conversation status to waiting_for_human
+-&gt; user receives an approved handoff message
+-&gt; staff sees and answers the conversation in WhatsApp Business
+-&gt; API receives the staff-message echo
+-&gt; conversation status changes to human
+-&gt; automated replies remain paused
+</code></pre>
+<p>The application must subscribe to and process the relevant message-echo webhook so it
+can distinguish staff messages from bot-generated outbound messages. While a
+conversation is in <code>waiting_for_human</code> or <code>human</code> state, incoming user messages are
+stored but are not sent to the LLM.</p>
+<p>This option requires:</p>
+<ul>
+<li>A SAL phone number registered with the WhatsApp Business app.</li>
+<li>Eligibility and enablement for WhatsApp Business App Coexistence.</li>
+<li>Successful connection of that number to the Cloud API.</li>
+<li>A tested staff-message echo flow.</li>
+</ul>
+<p>Coexistence must be confirmed before changing or migrating SAL&#39;s active support number.
+The team should test onboarding and handoff with a separate number first.</p>
+<p>If SAL has no Coexistence-enabled number, staff cannot use the same WhatsApp Business
+app conversation as the Cloud API assistant. In that case, the solution must include
+a protected custom staff chat interface that sends staff replies through the Cloud API.</p>
+<h3>6.10 Custom staff chat interface</h3>
+<p>This component is required only when Coexistence is unavailable, or later when SAL
+needs stronger assignment, reporting, and multi-agent capabilities.</p>
+<p>The minimal staff interface supports:</p>
+<ul>
+<li>Listing conversations waiting for a human.</li>
+<li>Viewing recent messages, transcript, generated answer, and cited chunks.</li>
+<li>Claiming a conversation.</li>
+<li>Sending a manual WhatsApp reply.</li>
+<li>Returning a conversation to bot mode.</li>
+<li>Closing a conversation.</li>
+<li>Marking an answer correct, incorrect, or requiring review.</li>
+</ul>
+<p>Authentication can use one simple deployment-appropriate mechanism for the prototype,
+but the inbox must not be publicly accessible.</p>
+<h2>7. Message flows</h2>
+<h3>7.1 Text question</h3>
+<div class="diagram diagram-2" role="img" aria-label="Architecture diagram 2"><svg class="architecture-svg" id="my-svg" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="max-width: 1124px; background-color: transparent;" viewBox="-50 -10 1124 641" role="graphics-document document" aria-roledescription="sequence"><g><rect x="874" y="555" fill="#eaeaea" stroke="#666" width="150" height="65" name="L" rx="3" ry="3" class="actor actor-bottom"/><text x="949" y="587.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="949" dy="0">GPT-5.6 Luna</tspan></text></g><g><rect x="674" y="555" fill="#eaeaea" stroke="#666" width="150" height="65" name="D" rx="3" ry="3" class="actor actor-bottom"/><text x="749" y="587.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="749" dy="0">SQLite</tspan></text></g><g><rect x="440" y="555" fill="#eaeaea" stroke="#666" width="150" height="65" name="A" rx="3" ry="3" class="actor actor-bottom"/><text x="515" y="587.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="515" dy="0">API service</tspan></text></g><g><rect x="240" y="555" fill="#eaeaea" stroke="#666" width="150" height="65" name="W" rx="3" ry="3" class="actor actor-bottom"/><text x="315" y="587.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="315" dy="0">WhatsApp</tspan></text></g><g><rect x="0" y="555" fill="#eaeaea" stroke="#666" width="150" height="65" name="U" rx="3" ry="3" class="actor actor-bottom"/><text x="75" y="587.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="0">User</tspan></text></g><g><line id="actor4" x1="949" y1="65" x2="949" y2="555" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="L" data-et="life-line" data-id="L"/><g id="root-4" data-et="participant" data-type="participant" data-id="L"><rect x="874" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="L" rx="3" ry="3" class="actor actor-top"/><text x="949" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="949" dy="0">GPT-5.6 Luna</tspan></text></g></g><g><line id="actor3" x1="749" y1="65" x2="749" y2="555" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="D" data-et="life-line" data-id="D"/><g id="root-3" data-et="participant" data-type="participant" data-id="D"><rect x="674" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="D" rx="3" ry="3" class="actor actor-top"/><text x="749" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="749" dy="0">SQLite</tspan></text></g></g><g><line id="actor2" x1="515" y1="65" x2="515" y2="555" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="A" data-et="life-line" data-id="A"/><g id="root-2" data-et="participant" data-type="participant" data-id="A"><rect x="440" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="A" rx="3" ry="3" class="actor actor-top"/><text x="515" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="515" dy="0">API service</tspan></text></g></g><g><line id="actor1" x1="315" y1="65" x2="315" y2="555" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="W" data-et="life-line" data-id="W"/><g id="root-1" data-et="participant" data-type="participant" data-id="W"><rect x="240" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="W" rx="3" ry="3" class="actor actor-top"/><text x="315" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="315" dy="0">WhatsApp</tspan></text></g></g><g><line id="actor0" x1="75" y1="65" x2="75" y2="555" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="U" data-et="life-line" data-id="U"/><g id="root-0" data-et="participant" data-type="participant" data-id="U"><rect x="0" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="U" rx="3" ry="3" class="actor actor-top"/><text x="75" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="0">User</tspan></text></g></g><style>#my-svg{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;fill:#000000;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#my-svg .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#my-svg .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#my-svg .error-icon{fill:#552222;}#my-svg .error-text{fill:#552222;stroke:#552222;}#my-svg .edge-thickness-normal{stroke-width:1px;}#my-svg .edge-thickness-thick{stroke-width:3.5px;}#my-svg .edge-pattern-solid{stroke-dasharray:0;}#my-svg .edge-thickness-invisible{stroke-width:0;fill:none;}#my-svg .edge-pattern-dashed{stroke-dasharray:3;}#my-svg .edge-pattern-dotted{stroke-dasharray:2;}#my-svg .marker{fill:#666;stroke:#666;}#my-svg .marker.cross{stroke:#666;}#my-svg svg{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;}#my-svg p{margin:0;}#my-svg .actor{stroke:hsl(0, 0%, 83%);fill:#eee;stroke-width:1;}#my-svg rect.actor.outer-path[data-look="neo"]{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg rect.note[data-look="neo"]{stroke:#999;fill:#666;filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg text.actor&gt;tspan{fill:#333;stroke:none;}#my-svg .actor-line{stroke:hsl(0, 0%, 83%);}#my-svg .innerArc{stroke-width:1.5;stroke-dasharray:none;}#my-svg .messageLine0{stroke-width:1.5;stroke-dasharray:none;stroke:#333;}#my-svg .messageLine1{stroke-width:1.5;stroke-dasharray:2,2;stroke:#333;}#my-svg [id$="-arrowhead"] path{fill:#333;stroke:#333;}#my-svg .sequenceNumber{fill:white;}#my-svg [id$="-sequencenumber"]{fill:#333;}#my-svg [id$="-crosshead"] path{fill:#333;stroke:#333;}#my-svg .messageText{fill:#333;stroke:none;}#my-svg .labelBox{stroke:hsl(0, 0%, 83%);fill:#eee;filter:none;}#my-svg .labelText,#my-svg .labelText&gt;tspan{fill:#333;stroke:none;}#my-svg .loopText,#my-svg .loopText&gt;tspan{fill:#333;stroke:none;}#my-svg .sectionTitle,#my-svg .sectionTitle&gt;tspan{fill:#333;stroke:none;}#my-svg .loopLine{stroke-width:2px;stroke-dasharray:2,2;stroke:hsl(0, 0%, 83%);fill:hsl(0, 0%, 83%);}#my-svg .note{stroke:#999;fill:#666;}#my-svg .noteText,#my-svg .noteText&gt;tspan{fill:#fff;stroke:none;font-weight:normal;}#my-svg .activation0{fill:#f4f4f4;stroke:#666;}#my-svg .activation1{fill:#f4f4f4;stroke:#666;}#my-svg .activation2{fill:#f4f4f4;stroke:#666;}#my-svg .actorPopupMenu{position:absolute;}#my-svg .actorPopupMenuPanel{position:absolute;fill:#eee;box-shadow:0px 8px 16px 0px rgba(0,0,0,0.2);filter:drop-shadow(3px 5px 2px rgb(0 0 0 / 0.4));}#my-svg .actor-man circle,#my-svg line{fill:#eee;stroke-width:2px;}#my-svg g rect.rect{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));stroke:#999;}#my-svg .node .neo-node{stroke:#999;}#my-svg [data-look="neo"].node rect,#my-svg [data-look="neo"].cluster rect,#my-svg [data-look="neo"].node polygon{stroke:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].node path{stroke:url(#my-svg-gradient);stroke-width:1px;}#my-svg [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].node .neo-line path{stroke:#999;filter:none;}#my-svg [data-look="neo"].node circle{stroke:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].node circle .state-start{fill:#000000;}#my-svg [data-look="neo"].icon-shape .icon{fill:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].icon-shape .icon-neo path{stroke:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg :root{--mermaid-font-family:"trebuchet ms",verdana,arial,sans-serif;}</style><g/><defs><symbol id="my-svg-computer" width="24" height="24"><path transform="scale(.5)" d="M2 2v13h20v-13h-20zm18 11h-16v-9h16v9zm-10.228 6l.466-1h3.524l.467 1h-4.457zm14.228 3h-24l2-6h2.104l-1.33 4h18.45l-1.297-4h2.073l2 6zm-5-10h-14v-7h14v7z"/></symbol></defs><defs><symbol id="my-svg-database" fill-rule="evenodd" clip-rule="evenodd"><path transform="scale(.5)" d="M12.258.001l.256.004.255.005.253.008.251.01.249.012.247.015.246.016.242.019.241.02.239.023.236.024.233.027.231.028.229.031.225.032.223.034.22.036.217.038.214.04.211.041.208.043.205.045.201.046.198.048.194.05.191.051.187.053.183.054.18.056.175.057.172.059.168.06.163.061.16.063.155.064.15.066.074.033.073.033.071.034.07.034.069.035.068.035.067.035.066.035.064.036.064.036.062.036.06.036.06.037.058.037.058.037.055.038.055.038.053.038.052.038.051.039.05.039.048.039.047.039.045.04.044.04.043.04.041.04.04.041.039.041.037.041.036.041.034.041.033.042.032.042.03.042.029.042.027.042.026.043.024.043.023.043.021.043.02.043.018.044.017.043.015.044.013.044.012.044.011.045.009.044.007.045.006.045.004.045.002.045.001.045v17l-.001.045-.002.045-.004.045-.006.045-.007.045-.009.044-.011.045-.012.044-.013.044-.015.044-.017.043-.018.044-.02.043-.021.043-.023.043-.024.043-.026.043-.027.042-.029.042-.03.042-.032.042-.033.042-.034.041-.036.041-.037.041-.039.041-.04.041-.041.04-.043.04-.044.04-.045.04-.047.039-.048.039-.05.039-.051.039-.052.038-.053.038-.055.038-.055.038-.058.037-.058.037-.06.037-.06.036-.062.036-.064.036-.064.036-.066.035-.067.035-.068.035-.069.035-.07.034-.071.034-.073.033-.074.033-.15.066-.155.064-.16.063-.163.061-.168.06-.172.059-.175.057-.18.056-.183.054-.187.053-.191.051-.194.05-.198.048-.201.046-.205.045-.208.043-.211.041-.214.04-.217.038-.22.036-.223.034-.225.032-.229.031-.231.028-.233.027-.236.024-.239.023-.241.02-.242.019-.246.016-.247.015-.249.012-.251.01-.253.008-.255.005-.256.004-.258.001-.258-.001-.256-.004-.255-.005-.253-.008-.251-.01-.249-.012-.247-.015-.245-.016-.243-.019-.241-.02-.238-.023-.236-.024-.234-.027-.231-.028-.228-.031-.226-.032-.223-.034-.22-.036-.217-.038-.214-.04-.211-.041-.208-.043-.204-.045-.201-.046-.198-.048-.195-.05-.19-.051-.187-.053-.184-.054-.179-.056-.176-.057-.172-.059-.167-.06-.164-.061-.159-.063-.155-.064-.151-.066-.074-.033-.072-.033-.072-.034-.07-.034-.069-.035-.068-.035-.067-.035-.066-.035-.064-.036-.063-.036-.062-.036-.061-.036-.06-.037-.058-.037-.057-.037-.056-.038-.055-.038-.053-.038-.052-.038-.051-.039-.049-.039-.049-.039-.046-.039-.046-.04-.044-.04-.043-.04-.041-.04-.04-.041-.039-.041-.037-.041-.036-.041-.034-.041-.033-.042-.032-.042-.03-.042-.029-.042-.027-.042-.026-.043-.024-.043-.023-.043-.021-.043-.02-.043-.018-.044-.017-.043-.015-.044-.013-.044-.012-.044-.011-.045-.009-.044-.007-.045-.006-.045-.004-.045-.002-.045-.001-.045v-17l.001-.045.002-.045.004-.045.006-.045.007-.045.009-.044.011-.045.012-.044.013-.044.015-.044.017-.043.018-.044.02-.043.021-.043.023-.043.024-.043.026-.043.027-.042.029-.042.03-.042.032-.042.033-.042.034-.041.036-.041.037-.041.039-.041.04-.041.041-.04.043-.04.044-.04.046-.04.046-.039.049-.039.049-.039.051-.039.052-.038.053-.038.055-.038.056-.038.057-.037.058-.037.06-.037.061-.036.062-.036.063-.036.064-.036.066-.035.067-.035.068-.035.069-.035.07-.034.072-.034.072-.033.074-.033.151-.066.155-.064.159-.063.164-.061.167-.06.172-.059.176-.057.179-.056.184-.054.187-.053.19-.051.195-.05.198-.048.201-.046.204-.045.208-.043.211-.041.214-.04.217-.038.22-.036.223-.034.226-.032.228-.031.231-.028.234-.027.236-.024.238-.023.241-.02.243-.019.245-.016.247-.015.249-.012.251-.01.253-.008.255-.005.256-.004.258-.001.258.001zm-9.258 20.499v.01l.001.021.003.021.004.022.005.021.006.022.007.022.009.023.01.022.011.023.012.023.013.023.015.023.016.024.017.023.018.024.019.024.021.024.022.025.023.024.024.025.052.049.056.05.061.051.066.051.07.051.075.051.079.052.084.052.088.052.092.052.097.052.102.051.105.052.11.052.114.051.119.051.123.051.127.05.131.05.135.05.139.048.144.049.147.047.152.047.155.047.16.045.163.045.167.043.171.043.176.041.178.041.183.039.187.039.19.037.194.035.197.035.202.033.204.031.209.03.212.029.216.027.219.025.222.024.226.021.23.02.233.018.236.016.24.015.243.012.246.01.249.008.253.005.256.004.259.001.26-.001.257-.004.254-.005.25-.008.247-.011.244-.012.241-.014.237-.016.233-.018.231-.021.226-.021.224-.024.22-.026.216-.027.212-.028.21-.031.205-.031.202-.034.198-.034.194-.036.191-.037.187-.039.183-.04.179-.04.175-.042.172-.043.168-.044.163-.045.16-.046.155-.046.152-.047.148-.048.143-.049.139-.049.136-.05.131-.05.126-.05.123-.051.118-.052.114-.051.11-.052.106-.052.101-.052.096-.052.092-.052.088-.053.083-.051.079-.052.074-.052.07-.051.065-.051.06-.051.056-.05.051-.05.023-.024.023-.025.021-.024.02-.024.019-.024.018-.024.017-.024.015-.023.014-.024.013-.023.012-.023.01-.023.01-.022.008-.022.006-.022.006-.022.004-.022.004-.021.001-.021.001-.021v-4.127l-.077.055-.08.053-.083.054-.085.053-.087.052-.09.052-.093.051-.095.05-.097.05-.1.049-.102.049-.105.048-.106.047-.109.047-.111.046-.114.045-.115.045-.118.044-.12.043-.122.042-.124.042-.126.041-.128.04-.13.04-.132.038-.134.038-.135.037-.138.037-.139.035-.142.035-.143.034-.144.033-.147.032-.148.031-.15.03-.151.03-.153.029-.154.027-.156.027-.158.026-.159.025-.161.024-.162.023-.163.022-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.011-.178.01-.179.008-.179.008-.181.006-.182.005-.182.004-.184.003-.184.002h-.37l-.184-.002-.184-.003-.182-.004-.182-.005-.181-.006-.179-.008-.179-.008-.178-.01-.176-.011-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.022-.162-.023-.161-.024-.159-.025-.157-.026-.156-.027-.155-.027-.153-.029-.151-.03-.15-.03-.148-.031-.146-.032-.145-.033-.143-.034-.141-.035-.14-.035-.137-.037-.136-.037-.134-.038-.132-.038-.13-.04-.128-.04-.126-.041-.124-.042-.122-.042-.12-.044-.117-.043-.116-.045-.113-.045-.112-.046-.109-.047-.106-.047-.105-.048-.102-.049-.1-.049-.097-.05-.095-.05-.093-.052-.09-.051-.087-.052-.085-.053-.083-.054-.08-.054-.077-.054v4.127zm0-5.654v.011l.001.021.003.021.004.021.005.022.006.022.007.022.009.022.01.022.011.023.012.023.013.023.015.024.016.023.017.024.018.024.019.024.021.024.022.024.023.025.024.024.052.05.056.05.061.05.066.051.07.051.075.052.079.051.084.052.088.052.092.052.097.052.102.052.105.052.11.051.114.051.119.052.123.05.127.051.131.05.135.049.139.049.144.048.147.048.152.047.155.046.16.045.163.045.167.044.171.042.176.042.178.04.183.04.187.038.19.037.194.036.197.034.202.033.204.032.209.03.212.028.216.027.219.025.222.024.226.022.23.02.233.018.236.016.24.014.243.012.246.01.249.008.253.006.256.003.259.001.26-.001.257-.003.254-.006.25-.008.247-.01.244-.012.241-.015.237-.016.233-.018.231-.02.226-.022.224-.024.22-.025.216-.027.212-.029.21-.03.205-.032.202-.033.198-.035.194-.036.191-.037.187-.039.183-.039.179-.041.175-.042.172-.043.168-.044.163-.045.16-.045.155-.047.152-.047.148-.048.143-.048.139-.05.136-.049.131-.05.126-.051.123-.051.118-.051.114-.052.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.051.07-.052.065-.051.06-.05.056-.051.051-.049.023-.025.023-.024.021-.025.02-.024.019-.024.018-.024.017-.024.015-.023.014-.023.013-.024.012-.022.01-.023.01-.023.008-.022.006-.022.006-.022.004-.021.004-.022.001-.021.001-.021v-4.139l-.077.054-.08.054-.083.054-.085.052-.087.053-.09.051-.093.051-.095.051-.097.05-.1.049-.102.049-.105.048-.106.047-.109.047-.111.046-.114.045-.115.044-.118.044-.12.044-.122.042-.124.042-.126.041-.128.04-.13.039-.132.039-.134.038-.135.037-.138.036-.139.036-.142.035-.143.033-.144.033-.147.033-.148.031-.15.03-.151.03-.153.028-.154.028-.156.027-.158.026-.159.025-.161.024-.162.023-.163.022-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.011-.178.009-.179.009-.179.007-.181.007-.182.005-.182.004-.184.003-.184.002h-.37l-.184-.002-.184-.003-.182-.004-.182-.005-.181-.007-.179-.007-.179-.009-.178-.009-.176-.011-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.022-.162-.023-.161-.024-.159-.025-.157-.026-.156-.027-.155-.028-.153-.028-.151-.03-.15-.03-.148-.031-.146-.033-.145-.033-.143-.033-.141-.035-.14-.036-.137-.036-.136-.037-.134-.038-.132-.039-.13-.039-.128-.04-.126-.041-.124-.042-.122-.043-.12-.043-.117-.044-.116-.044-.113-.046-.112-.046-.109-.046-.106-.047-.105-.048-.102-.049-.1-.049-.097-.05-.095-.051-.093-.051-.09-.051-.087-.053-.085-.052-.083-.054-.08-.054-.077-.054v4.139zm0-5.666v.011l.001.02.003.022.004.021.005.022.006.021.007.022.009.023.01.022.011.023.012.023.013.023.015.023.016.024.017.024.018.023.019.024.021.025.022.024.023.024.024.025.052.05.056.05.061.05.066.051.07.051.075.052.079.051.084.052.088.052.092.052.097.052.102.052.105.051.11.052.114.051.119.051.123.051.127.05.131.05.135.05.139.049.144.048.147.048.152.047.155.046.16.045.163.045.167.043.171.043.176.042.178.04.183.04.187.038.19.037.194.036.197.034.202.033.204.032.209.03.212.028.216.027.219.025.222.024.226.021.23.02.233.018.236.017.24.014.243.012.246.01.249.008.253.006.256.003.259.001.26-.001.257-.003.254-.006.25-.008.247-.01.244-.013.241-.014.237-.016.233-.018.231-.02.226-.022.224-.024.22-.025.216-.027.212-.029.21-.03.205-.032.202-.033.198-.035.194-.036.191-.037.187-.039.183-.039.179-.041.175-.042.172-.043.168-.044.163-.045.16-.045.155-.047.152-.047.148-.048.143-.049.139-.049.136-.049.131-.051.126-.05.123-.051.118-.052.114-.051.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.052.07-.051.065-.051.06-.051.056-.05.051-.049.023-.025.023-.025.021-.024.02-.024.019-.024.018-.024.017-.024.015-.023.014-.024.013-.023.012-.023.01-.022.01-.023.008-.022.006-.022.006-.022.004-.022.004-.021.001-.021.001-.021v-4.153l-.077.054-.08.054-.083.053-.085.053-.087.053-.09.051-.093.051-.095.051-.097.05-.1.049-.102.048-.105.048-.106.048-.109.046-.111.046-.114.046-.115.044-.118.044-.12.043-.122.043-.124.042-.126.041-.128.04-.13.039-.132.039-.134.038-.135.037-.138.036-.139.036-.142.034-.143.034-.144.033-.147.032-.148.032-.15.03-.151.03-.153.028-.154.028-.156.027-.158.026-.159.024-.161.024-.162.023-.163.023-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.01-.178.01-.179.009-.179.007-.181.006-.182.006-.182.004-.184.003-.184.001-.185.001-.185-.001-.184-.001-.184-.003-.182-.004-.182-.006-.181-.006-.179-.007-.179-.009-.178-.01-.176-.01-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.023-.162-.023-.161-.024-.159-.024-.157-.026-.156-.027-.155-.028-.153-.028-.151-.03-.15-.03-.148-.032-.146-.032-.145-.033-.143-.034-.141-.034-.14-.036-.137-.036-.136-.037-.134-.038-.132-.039-.13-.039-.128-.041-.126-.041-.124-.041-.122-.043-.12-.043-.117-.044-.116-.044-.113-.046-.112-.046-.109-.046-.106-.048-.105-.048-.102-.048-.1-.05-.097-.049-.095-.051-.093-.051-.09-.052-.087-.052-.085-.053-.083-.053-.08-.054-.077-.054v4.153zm8.74-8.179l-.257.004-.254.005-.25.008-.247.011-.244.012-.241.014-.237.016-.233.018-.231.021-.226.022-.224.023-.22.026-.216.027-.212.028-.21.031-.205.032-.202.033-.198.034-.194.036-.191.038-.187.038-.183.04-.179.041-.175.042-.172.043-.168.043-.163.045-.16.046-.155.046-.152.048-.148.048-.143.048-.139.049-.136.05-.131.05-.126.051-.123.051-.118.051-.114.052-.11.052-.106.052-.101.052-.096.052-.092.052-.088.052-.083.052-.079.052-.074.051-.07.052-.065.051-.06.05-.056.05-.051.05-.023.025-.023.024-.021.024-.02.025-.019.024-.018.024-.017.023-.015.024-.014.023-.013.023-.012.023-.01.023-.01.022-.008.022-.006.023-.006.021-.004.022-.004.021-.001.021-.001.021.001.021.001.021.004.021.004.022.006.021.006.023.008.022.01.022.01.023.012.023.013.023.014.023.015.024.017.023.018.024.019.024.02.025.021.024.023.024.023.025.051.05.056.05.06.05.065.051.07.052.074.051.079.052.083.052.088.052.092.052.096.052.101.052.106.052.11.052.114.052.118.051.123.051.126.051.131.05.136.05.139.049.143.048.148.048.152.048.155.046.16.046.163.045.168.043.172.043.175.042.179.041.183.04.187.038.191.038.194.036.198.034.202.033.205.032.21.031.212.028.216.027.22.026.224.023.226.022.231.021.233.018.237.016.241.014.244.012.247.011.25.008.254.005.257.004.26.001.26-.001.257-.004.254-.005.25-.008.247-.011.244-.012.241-.014.237-.016.233-.018.231-.021.226-.022.224-.023.22-.026.216-.027.212-.028.21-.031.205-.032.202-.033.198-.034.194-.036.191-.038.187-.038.183-.04.179-.041.175-.042.172-.043.168-.043.163-.045.16-.046.155-.046.152-.048.148-.048.143-.048.139-.049.136-.05.131-.05.126-.051.123-.051.118-.051.114-.052.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.051.07-.052.065-.051.06-.05.056-.05.051-.05.023-.025.023-.024.021-.024.02-.025.019-.024.018-.024.017-.023.015-.024.014-.023.013-.023.012-.023.01-.023.01-.022.008-.022.006-.023.006-.021.004-.022.004-.021.001-.021.001-.021-.001-.021-.001-.021-.004-.021-.004-.022-.006-.021-.006-.023-.008-.022-.01-.022-.01-.023-.012-.023-.013-.023-.014-.023-.015-.024-.017-.023-.018-.024-.019-.024-.02-.025-.021-.024-.023-.024-.023-.025-.051-.05-.056-.05-.06-.05-.065-.051-.07-.052-.074-.051-.079-.052-.083-.052-.088-.052-.092-.052-.096-.052-.101-.052-.106-.052-.11-.052-.114-.052-.118-.051-.123-.051-.126-.051-.131-.05-.136-.05-.139-.049-.143-.048-.148-.048-.152-.048-.155-.046-.16-.046-.163-.045-.168-.043-.172-.043-.175-.042-.179-.041-.183-.04-.187-.038-.191-.038-.194-.036-.198-.034-.202-.033-.205-.032-.21-.031-.212-.028-.216-.027-.22-.026-.224-.023-.226-.022-.231-.021-.233-.018-.237-.016-.241-.014-.244-.012-.247-.011-.25-.008-.254-.005-.257-.004-.26-.001-.26.001z"/></symbol></defs><defs><symbol id="my-svg-clock" width="24" height="24"><path transform="scale(.5)" d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.848 12.459c.202.038.202.333.001.372-1.907.361-6.045 1.111-6.547 1.111-.719 0-1.301-.582-1.301-1.301 0-.512.77-5.447 1.125-7.445.034-.192.312-.181.343.014l.985 6.238 5.394 1.011z"/></symbol></defs><defs><marker id="my-svg-arrowhead" refX="7.9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M -1 0 L 10 5 L 0 10 z"/></marker></defs><defs><marker id="my-svg-crosshead" markerWidth="15" markerHeight="8" orient="auto" refX="4" refY="4.5"><path fill="none" stroke="#000000" stroke-width="1pt" d="M 1,2 L 6,7 M 6,2 L 1,7" style="stroke-dasharray: 0, 0;"/></marker></defs><defs><marker id="my-svg-filled-head" refX="15.5" refY="7" markerWidth="20" markerHeight="28" orient="auto"><path d="M 18,7 L9,13 L14,7 L9,1 Z"/></marker></defs><defs><marker id="my-svg-sequencenumber" refX="15" refY="15" markerWidth="60" markerHeight="40" orient="auto"><circle cx="15" cy="15" r="6"/></marker></defs><defs><marker id="my-svg-solidTopArrowHead" refX="7.9" refY="7.25" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 10 8 L 0 8 z"/></marker></defs><defs><marker id="my-svg-solidBottomArrowHead" refX="7.9" refY="0.75" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 10 0 L 0 8 z"/></marker></defs><defs><marker id="my-svg-stickTopArrowHead" refX="7.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 7 7" stroke="black" stroke-width="1.5" fill="none"/></marker></defs><defs><marker id="my-svg-stickBottomArrowHead" refX="7.5" refY="0" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 7 L 7 0" stroke="black" stroke-width="1.5" fill="none"/></marker></defs><text x="194" y="80" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Text question</text><line x1="76" y1="109" x2="311" y2="109" class="messageLine0" data-et="message" data-id="i0" data-from="U" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="414" y="124" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Webhook message</text><line x1="316" y1="153" x2="511" y2="153" class="messageLine0" data-et="message" data-id="i1" data-from="W" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="631" y="168" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Deduplicate and store</text><line x1="516" y1="197" x2="745" y2="197" class="messageLine0" data-et="message" data-id="i2" data-from="A" data-to="D" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="631" y="212" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Load recent conversation</text><line x1="516" y1="241" x2="745" y2="241" class="messageLine0" data-et="message" data-id="i3" data-from="A" data-to="D" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="731" y="256" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Question + history + full manual</text><line x1="516" y1="285" x2="945" y2="285" class="messageLine0" data-et="message" data-id="i4" data-from="A" data-to="L" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="734" y="300" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Structured grounded answer</text><line x1="948" y1="329" x2="519" y2="329" class="messageLine1" data-et="message" data-id="i5" data-from="L" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><text x="516" y="344" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Validate citations and policy</text><path d="M 516,373 C 576,363 576,403 516,393" class="messageLine0" data-et="message" data-id="i6" data-from="A" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="631" y="418" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Store result</text><line x1="516" y1="447" x2="745" y2="447" class="messageLine0" data-et="message" data-id="i7" data-from="A" data-to="D" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="417" y="462" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Send text response</text><line x1="514" y1="491" x2="319" y2="491" class="messageLine0" data-et="message" data-id="i8" data-from="A" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="197" y="506" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Answer with page citation</text><line x1="314" y1="535" x2="79" y2="535" class="messageLine0" data-et="message" data-id="i9" data-from="W" data-to="U" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/></svg></div><h3>7.2 Voice question</h3>
+<div class="diagram diagram-3" role="img" aria-label="Architecture diagram 3"><svg class="architecture-svg" id="my-svg" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="max-width: 1157px; background-color: transparent;" viewBox="-50 -10 1157 715" role="graphics-document document" aria-roledescription="sequence"><g><rect x="907" y="629" fill="#eaeaea" stroke="#666" width="150" height="65" name="L" rx="3" ry="3" class="actor actor-bottom"/><text x="982" y="661.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="982" dy="0">GPT-5.6 Luna</tspan></text></g><g><rect x="707" y="629" fill="#eaeaea" stroke="#666" width="150" height="65" name="S" rx="3" ry="3" class="actor actor-bottom"/><text x="782" y="661.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="782" dy="0">Azure Speech</tspan></text></g><g><rect x="503" y="629" fill="#eaeaea" stroke="#666" width="150" height="65" name="A" rx="3" ry="3" class="actor actor-bottom"/><text x="578" y="661.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="578" dy="0">API service</tspan></text></g><g><rect x="240" y="629" fill="#eaeaea" stroke="#666" width="150" height="65" name="W" rx="3" ry="3" class="actor actor-bottom"/><text x="315" y="661.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="315" dy="0">WhatsApp</tspan></text></g><g><rect x="0" y="629" fill="#eaeaea" stroke="#666" width="150" height="65" name="U" rx="3" ry="3" class="actor actor-bottom"/><text x="75" y="661.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="0">User</tspan></text></g><g><line id="actor4" x1="982" y1="65" x2="982" y2="629" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="L" data-et="life-line" data-id="L"/><g id="root-4" data-et="participant" data-type="participant" data-id="L"><rect x="907" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="L" rx="3" ry="3" class="actor actor-top"/><text x="982" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="982" dy="0">GPT-5.6 Luna</tspan></text></g></g><g><line id="actor3" x1="782" y1="65" x2="782" y2="629" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="S" data-et="life-line" data-id="S"/><g id="root-3" data-et="participant" data-type="participant" data-id="S"><rect x="707" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="S" rx="3" ry="3" class="actor actor-top"/><text x="782" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="782" dy="0">Azure Speech</tspan></text></g></g><g><line id="actor2" x1="578" y1="65" x2="578" y2="629" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="A" data-et="life-line" data-id="A"/><g id="root-2" data-et="participant" data-type="participant" data-id="A"><rect x="503" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="A" rx="3" ry="3" class="actor actor-top"/><text x="578" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="578" dy="0">API service</tspan></text></g></g><g><line id="actor1" x1="315" y1="65" x2="315" y2="629" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="W" data-et="life-line" data-id="W"/><g id="root-1" data-et="participant" data-type="participant" data-id="W"><rect x="240" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="W" rx="3" ry="3" class="actor actor-top"/><text x="315" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="315" dy="0">WhatsApp</tspan></text></g></g><g><line id="actor0" x1="75" y1="65" x2="75" y2="629" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="U" data-et="life-line" data-id="U"/><g id="root-0" data-et="participant" data-type="participant" data-id="U"><rect x="0" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="U" rx="3" ry="3" class="actor actor-top"/><text x="75" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="0">User</tspan></text></g></g><style>#my-svg{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;fill:#000000;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#my-svg .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#my-svg .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#my-svg .error-icon{fill:#552222;}#my-svg .error-text{fill:#552222;stroke:#552222;}#my-svg .edge-thickness-normal{stroke-width:1px;}#my-svg .edge-thickness-thick{stroke-width:3.5px;}#my-svg .edge-pattern-solid{stroke-dasharray:0;}#my-svg .edge-thickness-invisible{stroke-width:0;fill:none;}#my-svg .edge-pattern-dashed{stroke-dasharray:3;}#my-svg .edge-pattern-dotted{stroke-dasharray:2;}#my-svg .marker{fill:#666;stroke:#666;}#my-svg .marker.cross{stroke:#666;}#my-svg svg{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;}#my-svg p{margin:0;}#my-svg .actor{stroke:hsl(0, 0%, 83%);fill:#eee;stroke-width:1;}#my-svg rect.actor.outer-path[data-look="neo"]{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg rect.note[data-look="neo"]{stroke:#999;fill:#666;filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg text.actor&gt;tspan{fill:#333;stroke:none;}#my-svg .actor-line{stroke:hsl(0, 0%, 83%);}#my-svg .innerArc{stroke-width:1.5;stroke-dasharray:none;}#my-svg .messageLine0{stroke-width:1.5;stroke-dasharray:none;stroke:#333;}#my-svg .messageLine1{stroke-width:1.5;stroke-dasharray:2,2;stroke:#333;}#my-svg [id$="-arrowhead"] path{fill:#333;stroke:#333;}#my-svg .sequenceNumber{fill:white;}#my-svg [id$="-sequencenumber"]{fill:#333;}#my-svg [id$="-crosshead"] path{fill:#333;stroke:#333;}#my-svg .messageText{fill:#333;stroke:none;}#my-svg .labelBox{stroke:hsl(0, 0%, 83%);fill:#eee;filter:none;}#my-svg .labelText,#my-svg .labelText&gt;tspan{fill:#333;stroke:none;}#my-svg .loopText,#my-svg .loopText&gt;tspan{fill:#333;stroke:none;}#my-svg .sectionTitle,#my-svg .sectionTitle&gt;tspan{fill:#333;stroke:none;}#my-svg .loopLine{stroke-width:2px;stroke-dasharray:2,2;stroke:hsl(0, 0%, 83%);fill:hsl(0, 0%, 83%);}#my-svg .note{stroke:#999;fill:#666;}#my-svg .noteText,#my-svg .noteText&gt;tspan{fill:#fff;stroke:none;font-weight:normal;}#my-svg .activation0{fill:#f4f4f4;stroke:#666;}#my-svg .activation1{fill:#f4f4f4;stroke:#666;}#my-svg .activation2{fill:#f4f4f4;stroke:#666;}#my-svg .actorPopupMenu{position:absolute;}#my-svg .actorPopupMenuPanel{position:absolute;fill:#eee;box-shadow:0px 8px 16px 0px rgba(0,0,0,0.2);filter:drop-shadow(3px 5px 2px rgb(0 0 0 / 0.4));}#my-svg .actor-man circle,#my-svg line{fill:#eee;stroke-width:2px;}#my-svg g rect.rect{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));stroke:#999;}#my-svg .node .neo-node{stroke:#999;}#my-svg [data-look="neo"].node rect,#my-svg [data-look="neo"].cluster rect,#my-svg [data-look="neo"].node polygon{stroke:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].node path{stroke:url(#my-svg-gradient);stroke-width:1px;}#my-svg [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].node .neo-line path{stroke:#999;filter:none;}#my-svg [data-look="neo"].node circle{stroke:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].node circle .state-start{fill:#000000;}#my-svg [data-look="neo"].icon-shape .icon{fill:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].icon-shape .icon-neo path{stroke:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg :root{--mermaid-font-family:"trebuchet ms",verdana,arial,sans-serif;}</style><g/><defs><symbol id="my-svg-computer" width="24" height="24"><path transform="scale(.5)" d="M2 2v13h20v-13h-20zm18 11h-16v-9h16v9zm-10.228 6l.466-1h3.524l.467 1h-4.457zm14.228 3h-24l2-6h2.104l-1.33 4h18.45l-1.297-4h2.073l2 6zm-5-10h-14v-7h14v7z"/></symbol></defs><defs><symbol id="my-svg-database" fill-rule="evenodd" clip-rule="evenodd"><path transform="scale(.5)" d="M12.258.001l.256.004.255.005.253.008.251.01.249.012.247.015.246.016.242.019.241.02.239.023.236.024.233.027.231.028.229.031.225.032.223.034.22.036.217.038.214.04.211.041.208.043.205.045.201.046.198.048.194.05.191.051.187.053.183.054.18.056.175.057.172.059.168.06.163.061.16.063.155.064.15.066.074.033.073.033.071.034.07.034.069.035.068.035.067.035.066.035.064.036.064.036.062.036.06.036.06.037.058.037.058.037.055.038.055.038.053.038.052.038.051.039.05.039.048.039.047.039.045.04.044.04.043.04.041.04.04.041.039.041.037.041.036.041.034.041.033.042.032.042.03.042.029.042.027.042.026.043.024.043.023.043.021.043.02.043.018.044.017.043.015.044.013.044.012.044.011.045.009.044.007.045.006.045.004.045.002.045.001.045v17l-.001.045-.002.045-.004.045-.006.045-.007.045-.009.044-.011.045-.012.044-.013.044-.015.044-.017.043-.018.044-.02.043-.021.043-.023.043-.024.043-.026.043-.027.042-.029.042-.03.042-.032.042-.033.042-.034.041-.036.041-.037.041-.039.041-.04.041-.041.04-.043.04-.044.04-.045.04-.047.039-.048.039-.05.039-.051.039-.052.038-.053.038-.055.038-.055.038-.058.037-.058.037-.06.037-.06.036-.062.036-.064.036-.064.036-.066.035-.067.035-.068.035-.069.035-.07.034-.071.034-.073.033-.074.033-.15.066-.155.064-.16.063-.163.061-.168.06-.172.059-.175.057-.18.056-.183.054-.187.053-.191.051-.194.05-.198.048-.201.046-.205.045-.208.043-.211.041-.214.04-.217.038-.22.036-.223.034-.225.032-.229.031-.231.028-.233.027-.236.024-.239.023-.241.02-.242.019-.246.016-.247.015-.249.012-.251.01-.253.008-.255.005-.256.004-.258.001-.258-.001-.256-.004-.255-.005-.253-.008-.251-.01-.249-.012-.247-.015-.245-.016-.243-.019-.241-.02-.238-.023-.236-.024-.234-.027-.231-.028-.228-.031-.226-.032-.223-.034-.22-.036-.217-.038-.214-.04-.211-.041-.208-.043-.204-.045-.201-.046-.198-.048-.195-.05-.19-.051-.187-.053-.184-.054-.179-.056-.176-.057-.172-.059-.167-.06-.164-.061-.159-.063-.155-.064-.151-.066-.074-.033-.072-.033-.072-.034-.07-.034-.069-.035-.068-.035-.067-.035-.066-.035-.064-.036-.063-.036-.062-.036-.061-.036-.06-.037-.058-.037-.057-.037-.056-.038-.055-.038-.053-.038-.052-.038-.051-.039-.049-.039-.049-.039-.046-.039-.046-.04-.044-.04-.043-.04-.041-.04-.04-.041-.039-.041-.037-.041-.036-.041-.034-.041-.033-.042-.032-.042-.03-.042-.029-.042-.027-.042-.026-.043-.024-.043-.023-.043-.021-.043-.02-.043-.018-.044-.017-.043-.015-.044-.013-.044-.012-.044-.011-.045-.009-.044-.007-.045-.006-.045-.004-.045-.002-.045-.001-.045v-17l.001-.045.002-.045.004-.045.006-.045.007-.045.009-.044.011-.045.012-.044.013-.044.015-.044.017-.043.018-.044.02-.043.021-.043.023-.043.024-.043.026-.043.027-.042.029-.042.03-.042.032-.042.033-.042.034-.041.036-.041.037-.041.039-.041.04-.041.041-.04.043-.04.044-.04.046-.04.046-.039.049-.039.049-.039.051-.039.052-.038.053-.038.055-.038.056-.038.057-.037.058-.037.06-.037.061-.036.062-.036.063-.036.064-.036.066-.035.067-.035.068-.035.069-.035.07-.034.072-.034.072-.033.074-.033.151-.066.155-.064.159-.063.164-.061.167-.06.172-.059.176-.057.179-.056.184-.054.187-.053.19-.051.195-.05.198-.048.201-.046.204-.045.208-.043.211-.041.214-.04.217-.038.22-.036.223-.034.226-.032.228-.031.231-.028.234-.027.236-.024.238-.023.241-.02.243-.019.245-.016.247-.015.249-.012.251-.01.253-.008.255-.005.256-.004.258-.001.258.001zm-9.258 20.499v.01l.001.021.003.021.004.022.005.021.006.022.007.022.009.023.01.022.011.023.012.023.013.023.015.023.016.024.017.023.018.024.019.024.021.024.022.025.023.024.024.025.052.049.056.05.061.051.066.051.07.051.075.051.079.052.084.052.088.052.092.052.097.052.102.051.105.052.11.052.114.051.119.051.123.051.127.05.131.05.135.05.139.048.144.049.147.047.152.047.155.047.16.045.163.045.167.043.171.043.176.041.178.041.183.039.187.039.19.037.194.035.197.035.202.033.204.031.209.03.212.029.216.027.219.025.222.024.226.021.23.02.233.018.236.016.24.015.243.012.246.01.249.008.253.005.256.004.259.001.26-.001.257-.004.254-.005.25-.008.247-.011.244-.012.241-.014.237-.016.233-.018.231-.021.226-.021.224-.024.22-.026.216-.027.212-.028.21-.031.205-.031.202-.034.198-.034.194-.036.191-.037.187-.039.183-.04.179-.04.175-.042.172-.043.168-.044.163-.045.16-.046.155-.046.152-.047.148-.048.143-.049.139-.049.136-.05.131-.05.126-.05.123-.051.118-.052.114-.051.11-.052.106-.052.101-.052.096-.052.092-.052.088-.053.083-.051.079-.052.074-.052.07-.051.065-.051.06-.051.056-.05.051-.05.023-.024.023-.025.021-.024.02-.024.019-.024.018-.024.017-.024.015-.023.014-.024.013-.023.012-.023.01-.023.01-.022.008-.022.006-.022.006-.022.004-.022.004-.021.001-.021.001-.021v-4.127l-.077.055-.08.053-.083.054-.085.053-.087.052-.09.052-.093.051-.095.05-.097.05-.1.049-.102.049-.105.048-.106.047-.109.047-.111.046-.114.045-.115.045-.118.044-.12.043-.122.042-.124.042-.126.041-.128.04-.13.04-.132.038-.134.038-.135.037-.138.037-.139.035-.142.035-.143.034-.144.033-.147.032-.148.031-.15.03-.151.03-.153.029-.154.027-.156.027-.158.026-.159.025-.161.024-.162.023-.163.022-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.011-.178.01-.179.008-.179.008-.181.006-.182.005-.182.004-.184.003-.184.002h-.37l-.184-.002-.184-.003-.182-.004-.182-.005-.181-.006-.179-.008-.179-.008-.178-.01-.176-.011-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.022-.162-.023-.161-.024-.159-.025-.157-.026-.156-.027-.155-.027-.153-.029-.151-.03-.15-.03-.148-.031-.146-.032-.145-.033-.143-.034-.141-.035-.14-.035-.137-.037-.136-.037-.134-.038-.132-.038-.13-.04-.128-.04-.126-.041-.124-.042-.122-.042-.12-.044-.117-.043-.116-.045-.113-.045-.112-.046-.109-.047-.106-.047-.105-.048-.102-.049-.1-.049-.097-.05-.095-.05-.093-.052-.09-.051-.087-.052-.085-.053-.083-.054-.08-.054-.077-.054v4.127zm0-5.654v.011l.001.021.003.021.004.021.005.022.006.022.007.022.009.022.01.022.011.023.012.023.013.023.015.024.016.023.017.024.018.024.019.024.021.024.022.024.023.025.024.024.052.05.056.05.061.05.066.051.07.051.075.052.079.051.084.052.088.052.092.052.097.052.102.052.105.052.11.051.114.051.119.052.123.05.127.051.131.05.135.049.139.049.144.048.147.048.152.047.155.046.16.045.163.045.167.044.171.042.176.042.178.04.183.04.187.038.19.037.194.036.197.034.202.033.204.032.209.03.212.028.216.027.219.025.222.024.226.022.23.02.233.018.236.016.24.014.243.012.246.01.249.008.253.006.256.003.259.001.26-.001.257-.003.254-.006.25-.008.247-.01.244-.012.241-.015.237-.016.233-.018.231-.02.226-.022.224-.024.22-.025.216-.027.212-.029.21-.03.205-.032.202-.033.198-.035.194-.036.191-.037.187-.039.183-.039.179-.041.175-.042.172-.043.168-.044.163-.045.16-.045.155-.047.152-.047.148-.048.143-.048.139-.05.136-.049.131-.05.126-.051.123-.051.118-.051.114-.052.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.051.07-.052.065-.051.06-.05.056-.051.051-.049.023-.025.023-.024.021-.025.02-.024.019-.024.018-.024.017-.024.015-.023.014-.023.013-.024.012-.022.01-.023.01-.023.008-.022.006-.022.006-.022.004-.021.004-.022.001-.021.001-.021v-4.139l-.077.054-.08.054-.083.054-.085.052-.087.053-.09.051-.093.051-.095.051-.097.05-.1.049-.102.049-.105.048-.106.047-.109.047-.111.046-.114.045-.115.044-.118.044-.12.044-.122.042-.124.042-.126.041-.128.04-.13.039-.132.039-.134.038-.135.037-.138.036-.139.036-.142.035-.143.033-.144.033-.147.033-.148.031-.15.03-.151.03-.153.028-.154.028-.156.027-.158.026-.159.025-.161.024-.162.023-.163.022-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.011-.178.009-.179.009-.179.007-.181.007-.182.005-.182.004-.184.003-.184.002h-.37l-.184-.002-.184-.003-.182-.004-.182-.005-.181-.007-.179-.007-.179-.009-.178-.009-.176-.011-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.022-.162-.023-.161-.024-.159-.025-.157-.026-.156-.027-.155-.028-.153-.028-.151-.03-.15-.03-.148-.031-.146-.033-.145-.033-.143-.033-.141-.035-.14-.036-.137-.036-.136-.037-.134-.038-.132-.039-.13-.039-.128-.04-.126-.041-.124-.042-.122-.043-.12-.043-.117-.044-.116-.044-.113-.046-.112-.046-.109-.046-.106-.047-.105-.048-.102-.049-.1-.049-.097-.05-.095-.051-.093-.051-.09-.051-.087-.053-.085-.052-.083-.054-.08-.054-.077-.054v4.139zm0-5.666v.011l.001.02.003.022.004.021.005.022.006.021.007.022.009.023.01.022.011.023.012.023.013.023.015.023.016.024.017.024.018.023.019.024.021.025.022.024.023.024.024.025.052.05.056.05.061.05.066.051.07.051.075.052.079.051.084.052.088.052.092.052.097.052.102.052.105.051.11.052.114.051.119.051.123.051.127.05.131.05.135.05.139.049.144.048.147.048.152.047.155.046.16.045.163.045.167.043.171.043.176.042.178.04.183.04.187.038.19.037.194.036.197.034.202.033.204.032.209.03.212.028.216.027.219.025.222.024.226.021.23.02.233.018.236.017.24.014.243.012.246.01.249.008.253.006.256.003.259.001.26-.001.257-.003.254-.006.25-.008.247-.01.244-.013.241-.014.237-.016.233-.018.231-.02.226-.022.224-.024.22-.025.216-.027.212-.029.21-.03.205-.032.202-.033.198-.035.194-.036.191-.037.187-.039.183-.039.179-.041.175-.042.172-.043.168-.044.163-.045.16-.045.155-.047.152-.047.148-.048.143-.049.139-.049.136-.049.131-.051.126-.05.123-.051.118-.052.114-.051.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.052.07-.051.065-.051.06-.051.056-.05.051-.049.023-.025.023-.025.021-.024.02-.024.019-.024.018-.024.017-.024.015-.023.014-.024.013-.023.012-.023.01-.022.01-.023.008-.022.006-.022.006-.022.004-.022.004-.021.001-.021.001-.021v-4.153l-.077.054-.08.054-.083.053-.085.053-.087.053-.09.051-.093.051-.095.051-.097.05-.1.049-.102.048-.105.048-.106.048-.109.046-.111.046-.114.046-.115.044-.118.044-.12.043-.122.043-.124.042-.126.041-.128.04-.13.039-.132.039-.134.038-.135.037-.138.036-.139.036-.142.034-.143.034-.144.033-.147.032-.148.032-.15.03-.151.03-.153.028-.154.028-.156.027-.158.026-.159.024-.161.024-.162.023-.163.023-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.01-.178.01-.179.009-.179.007-.181.006-.182.006-.182.004-.184.003-.184.001-.185.001-.185-.001-.184-.001-.184-.003-.182-.004-.182-.006-.181-.006-.179-.007-.179-.009-.178-.01-.176-.01-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.023-.162-.023-.161-.024-.159-.024-.157-.026-.156-.027-.155-.028-.153-.028-.151-.03-.15-.03-.148-.032-.146-.032-.145-.033-.143-.034-.141-.034-.14-.036-.137-.036-.136-.037-.134-.038-.132-.039-.13-.039-.128-.041-.126-.041-.124-.041-.122-.043-.12-.043-.117-.044-.116-.044-.113-.046-.112-.046-.109-.046-.106-.048-.105-.048-.102-.048-.1-.05-.097-.049-.095-.051-.093-.051-.09-.052-.087-.052-.085-.053-.083-.053-.08-.054-.077-.054v4.153zm8.74-8.179l-.257.004-.254.005-.25.008-.247.011-.244.012-.241.014-.237.016-.233.018-.231.021-.226.022-.224.023-.22.026-.216.027-.212.028-.21.031-.205.032-.202.033-.198.034-.194.036-.191.038-.187.038-.183.04-.179.041-.175.042-.172.043-.168.043-.163.045-.16.046-.155.046-.152.048-.148.048-.143.048-.139.049-.136.05-.131.05-.126.051-.123.051-.118.051-.114.052-.11.052-.106.052-.101.052-.096.052-.092.052-.088.052-.083.052-.079.052-.074.051-.07.052-.065.051-.06.05-.056.05-.051.05-.023.025-.023.024-.021.024-.02.025-.019.024-.018.024-.017.023-.015.024-.014.023-.013.023-.012.023-.01.023-.01.022-.008.022-.006.023-.006.021-.004.022-.004.021-.001.021-.001.021.001.021.001.021.004.021.004.022.006.021.006.023.008.022.01.022.01.023.012.023.013.023.014.023.015.024.017.023.018.024.019.024.02.025.021.024.023.024.023.025.051.05.056.05.06.05.065.051.07.052.074.051.079.052.083.052.088.052.092.052.096.052.101.052.106.052.11.052.114.052.118.051.123.051.126.051.131.05.136.05.139.049.143.048.148.048.152.048.155.046.16.046.163.045.168.043.172.043.175.042.179.041.183.04.187.038.191.038.194.036.198.034.202.033.205.032.21.031.212.028.216.027.22.026.224.023.226.022.231.021.233.018.237.016.241.014.244.012.247.011.25.008.254.005.257.004.26.001.26-.001.257-.004.254-.005.25-.008.247-.011.244-.012.241-.014.237-.016.233-.018.231-.021.226-.022.224-.023.22-.026.216-.027.212-.028.21-.031.205-.032.202-.033.198-.034.194-.036.191-.038.187-.038.183-.04.179-.041.175-.042.172-.043.168-.043.163-.045.16-.046.155-.046.152-.048.148-.048.143-.048.139-.049.136-.05.131-.05.126-.051.123-.051.118-.051.114-.052.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.051.07-.052.065-.051.06-.05.056-.05.051-.05.023-.025.023-.024.021-.024.02-.025.019-.024.018-.024.017-.023.015-.024.014-.023.013-.023.012-.023.01-.023.01-.022.008-.022.006-.023.006-.021.004-.022.004-.021.001-.021.001-.021-.001-.021-.001-.021-.004-.021-.004-.022-.006-.021-.006-.023-.008-.022-.01-.022-.01-.023-.012-.023-.013-.023-.014-.023-.015-.024-.017-.023-.018-.024-.019-.024-.02-.025-.021-.024-.023-.024-.023-.025-.051-.05-.056-.05-.06-.05-.065-.051-.07-.052-.074-.051-.079-.052-.083-.052-.088-.052-.092-.052-.096-.052-.101-.052-.106-.052-.11-.052-.114-.052-.118-.051-.123-.051-.126-.051-.131-.05-.136-.05-.139-.049-.143-.048-.148-.048-.152-.048-.155-.046-.16-.046-.163-.045-.168-.043-.172-.043-.175-.042-.179-.041-.183-.04-.187-.038-.191-.038-.194-.036-.198-.034-.202-.033-.205-.032-.21-.031-.212-.028-.216-.027-.22-.026-.224-.023-.226-.022-.231-.021-.233-.018-.237-.016-.241-.014-.244-.012-.247-.011-.25-.008-.254-.005-.257-.004-.26-.001-.26.001z"/></symbol></defs><defs><symbol id="my-svg-clock" width="24" height="24"><path transform="scale(.5)" d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.848 12.459c.202.038.202.333.001.372-1.907.361-6.045 1.111-6.547 1.111-.719 0-1.301-.582-1.301-1.301 0-.512.77-5.447 1.125-7.445.034-.192.312-.181.343.014l.985 6.238 5.394 1.011z"/></symbol></defs><defs><marker id="my-svg-arrowhead" refX="7.9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M -1 0 L 10 5 L 0 10 z"/></marker></defs><defs><marker id="my-svg-crosshead" markerWidth="15" markerHeight="8" orient="auto" refX="4" refY="4.5"><path fill="none" stroke="#000000" stroke-width="1pt" d="M 1,2 L 6,7 M 6,2 L 1,7" style="stroke-dasharray: 0, 0;"/></marker></defs><defs><marker id="my-svg-filled-head" refX="15.5" refY="7" markerWidth="20" markerHeight="28" orient="auto"><path d="M 18,7 L9,13 L14,7 L9,1 Z"/></marker></defs><defs><marker id="my-svg-sequencenumber" refX="15" refY="15" markerWidth="60" markerHeight="40" orient="auto"><circle cx="15" cy="15" r="6"/></marker></defs><defs><marker id="my-svg-solidTopArrowHead" refX="7.9" refY="7.25" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 10 8 L 0 8 z"/></marker></defs><defs><marker id="my-svg-solidBottomArrowHead" refX="7.9" refY="0.75" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 10 0 L 0 8 z"/></marker></defs><defs><marker id="my-svg-stickTopArrowHead" refX="7.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 7 7" stroke="black" stroke-width="1.5" fill="none"/></marker></defs><defs><marker id="my-svg-stickBottomArrowHead" refX="7.5" refY="0" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 7 L 7 0" stroke="black" stroke-width="1.5" fill="none"/></marker></defs><text x="194" y="80" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Voice memo</text><line x1="76" y1="109" x2="311" y2="109" class="messageLine0" data-et="message" data-id="i0" data-from="U" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="445" y="124" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Webhook with media ID</text><line x1="316" y1="153" x2="574" y2="153" class="messageLine0" data-et="message" data-id="i1" data-from="W" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="448" y="168" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Retrieve and download media</text><line x1="577" y1="197" x2="319" y2="197" class="messageLine0" data-et="message" data-id="i2" data-from="A" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="679" y="212" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Temporary audio</text><line x1="579" y1="241" x2="778" y2="241" class="messageLine0" data-et="message" data-id="i3" data-from="A" data-to="S" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="682" y="256" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Transcript and locale</text><line x1="781" y1="285" x2="582" y2="285" class="messageLine1" data-et="message" data-id="i4" data-from="S" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><text x="579" y="300" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Delete temporary audio</text><path d="M 579,329 C 639,319 639,359 579,349" class="messageLine0" data-et="message" data-id="i5" data-from="A" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="779" y="374" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Transcript + history + full manual</text><line x1="579" y1="403" x2="978" y2="403" class="messageLine0" data-et="message" data-id="i6" data-from="A" data-to="L" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="782" y="418" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Structured grounded answer</text><line x1="981" y1="447" x2="582" y2="447" class="messageLine1" data-et="message" data-id="i7" data-from="L" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><text x="579" y="462" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Validate citations and policy</text><path d="M 579,491 C 639,481 639,521 579,511" class="messageLine0" data-et="message" data-id="i8" data-from="A" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="448" y="536" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Send text response</text><line x1="577" y1="565" x2="319" y2="565" class="messageLine0" data-et="message" data-id="i9" data-from="A" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="197" y="580" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Answer with page citation</text><line x1="314" y1="609" x2="79" y2="609" class="messageLine0" data-et="message" data-id="i10" data-from="W" data-to="U" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/></svg></div><h3>7.3 Human handoff</h3>
+<p>Triggers include:</p>
+<ul>
+<li>The user explicitly requests a person.</li>
+<li>The manual does not contain enough information.</li>
+<li>The question is case-specific or requires judgment.</li>
+<li>A safeguarding or emergency rule is triggered.</li>
+<li>Voice transcription is too uncertain for a consequential request.</li>
+<li>Model output fails validation.</li>
+</ul>
+<p>User response:</p>
+<pre><code class="language-text">I cannot confirm that from the SAL guide. I have forwarded your question to a
+staff member, who can reply in this conversation.
+</code></pre>
+<p>The exact message is localized and approved by SAL.</p>
+<h4>Coexistence handoff</h4>
+<div class="diagram diagram-4" role="img" aria-label="Architecture diagram 4"><svg class="architecture-svg" id="my-svg" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="max-width: 1000px; background-color: transparent;" viewBox="-50 -10 1000 627" role="graphics-document document" aria-roledescription="sequence"><g><rect x="714" y="541" fill="#eaeaea" stroke="#666" width="186" height="65" name="S" rx="3" ry="3" class="actor actor-bottom"/><text x="807" y="573.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="807" dy="0">SAL staff in Business app</tspan></text></g><g><rect x="514" y="541" fill="#eaeaea" stroke="#666" width="150" height="65" name="A" rx="3" ry="3" class="actor actor-bottom"/><text x="589" y="573.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="589" dy="0">API service</tspan></text></g><g><rect x="200" y="541" fill="#eaeaea" stroke="#666" width="150" height="65" name="W" rx="3" ry="3" class="actor actor-bottom"/><text x="275" y="573.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="275" dy="0">WhatsApp</tspan></text></g><g><rect x="0" y="541" fill="#eaeaea" stroke="#666" width="150" height="65" name="U" rx="3" ry="3" class="actor actor-bottom"/><text x="75" y="573.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="0">User</tspan></text></g><g><line id="actor3" x1="807" y1="65" x2="807" y2="541" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="S" data-et="life-line" data-id="S"/><g id="root-3" data-et="participant" data-type="participant" data-id="S"><rect x="714" y="0" fill="#eaeaea" stroke="#666" width="186" height="65" name="S" rx="3" ry="3" class="actor actor-top"/><text x="807" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="807" dy="0">SAL staff in Business app</tspan></text></g></g><g><line id="actor2" x1="589" y1="65" x2="589" y2="541" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="A" data-et="life-line" data-id="A"/><g id="root-2" data-et="participant" data-type="participant" data-id="A"><rect x="514" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="A" rx="3" ry="3" class="actor actor-top"/><text x="589" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="589" dy="0">API service</tspan></text></g></g><g><line id="actor1" x1="275" y1="65" x2="275" y2="541" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="W" data-et="life-line" data-id="W"/><g id="root-1" data-et="participant" data-type="participant" data-id="W"><rect x="200" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="W" rx="3" ry="3" class="actor actor-top"/><text x="275" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="275" dy="0">WhatsApp</tspan></text></g></g><g><line id="actor0" x1="75" y1="65" x2="75" y2="541" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="U" data-et="life-line" data-id="U"/><g id="root-0" data-et="participant" data-type="participant" data-id="U"><rect x="0" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="U" rx="3" ry="3" class="actor actor-top"/><text x="75" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="0">User</tspan></text></g></g><style>#my-svg{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;fill:#000000;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#my-svg .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#my-svg .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#my-svg .error-icon{fill:#552222;}#my-svg .error-text{fill:#552222;stroke:#552222;}#my-svg .edge-thickness-normal{stroke-width:1px;}#my-svg .edge-thickness-thick{stroke-width:3.5px;}#my-svg .edge-pattern-solid{stroke-dasharray:0;}#my-svg .edge-thickness-invisible{stroke-width:0;fill:none;}#my-svg .edge-pattern-dashed{stroke-dasharray:3;}#my-svg .edge-pattern-dotted{stroke-dasharray:2;}#my-svg .marker{fill:#666;stroke:#666;}#my-svg .marker.cross{stroke:#666;}#my-svg svg{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;}#my-svg p{margin:0;}#my-svg .actor{stroke:hsl(0, 0%, 83%);fill:#eee;stroke-width:1;}#my-svg rect.actor.outer-path[data-look="neo"]{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg rect.note[data-look="neo"]{stroke:#999;fill:#666;filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg text.actor&gt;tspan{fill:#333;stroke:none;}#my-svg .actor-line{stroke:hsl(0, 0%, 83%);}#my-svg .innerArc{stroke-width:1.5;stroke-dasharray:none;}#my-svg .messageLine0{stroke-width:1.5;stroke-dasharray:none;stroke:#333;}#my-svg .messageLine1{stroke-width:1.5;stroke-dasharray:2,2;stroke:#333;}#my-svg [id$="-arrowhead"] path{fill:#333;stroke:#333;}#my-svg .sequenceNumber{fill:white;}#my-svg [id$="-sequencenumber"]{fill:#333;}#my-svg [id$="-crosshead"] path{fill:#333;stroke:#333;}#my-svg .messageText{fill:#333;stroke:none;}#my-svg .labelBox{stroke:hsl(0, 0%, 83%);fill:#eee;filter:none;}#my-svg .labelText,#my-svg .labelText&gt;tspan{fill:#333;stroke:none;}#my-svg .loopText,#my-svg .loopText&gt;tspan{fill:#333;stroke:none;}#my-svg .sectionTitle,#my-svg .sectionTitle&gt;tspan{fill:#333;stroke:none;}#my-svg .loopLine{stroke-width:2px;stroke-dasharray:2,2;stroke:hsl(0, 0%, 83%);fill:hsl(0, 0%, 83%);}#my-svg .note{stroke:#999;fill:#666;}#my-svg .noteText,#my-svg .noteText&gt;tspan{fill:#fff;stroke:none;font-weight:normal;}#my-svg .activation0{fill:#f4f4f4;stroke:#666;}#my-svg .activation1{fill:#f4f4f4;stroke:#666;}#my-svg .activation2{fill:#f4f4f4;stroke:#666;}#my-svg .actorPopupMenu{position:absolute;}#my-svg .actorPopupMenuPanel{position:absolute;fill:#eee;box-shadow:0px 8px 16px 0px rgba(0,0,0,0.2);filter:drop-shadow(3px 5px 2px rgb(0 0 0 / 0.4));}#my-svg .actor-man circle,#my-svg line{fill:#eee;stroke-width:2px;}#my-svg g rect.rect{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));stroke:#999;}#my-svg .node .neo-node{stroke:#999;}#my-svg [data-look="neo"].node rect,#my-svg [data-look="neo"].cluster rect,#my-svg [data-look="neo"].node polygon{stroke:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].node path{stroke:url(#my-svg-gradient);stroke-width:1px;}#my-svg [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].node .neo-line path{stroke:#999;filter:none;}#my-svg [data-look="neo"].node circle{stroke:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].node circle .state-start{fill:#000000;}#my-svg [data-look="neo"].icon-shape .icon{fill:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].icon-shape .icon-neo path{stroke:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg :root{--mermaid-font-family:"trebuchet ms",verdana,arial,sans-serif;}</style><g/><defs><symbol id="my-svg-computer" width="24" height="24"><path transform="scale(.5)" d="M2 2v13h20v-13h-20zm18 11h-16v-9h16v9zm-10.228 6l.466-1h3.524l.467 1h-4.457zm14.228 3h-24l2-6h2.104l-1.33 4h18.45l-1.297-4h2.073l2 6zm-5-10h-14v-7h14v7z"/></symbol></defs><defs><symbol id="my-svg-database" fill-rule="evenodd" clip-rule="evenodd"><path transform="scale(.5)" d="M12.258.001l.256.004.255.005.253.008.251.01.249.012.247.015.246.016.242.019.241.02.239.023.236.024.233.027.231.028.229.031.225.032.223.034.22.036.217.038.214.04.211.041.208.043.205.045.201.046.198.048.194.05.191.051.187.053.183.054.18.056.175.057.172.059.168.06.163.061.16.063.155.064.15.066.074.033.073.033.071.034.07.034.069.035.068.035.067.035.066.035.064.036.064.036.062.036.06.036.06.037.058.037.058.037.055.038.055.038.053.038.052.038.051.039.05.039.048.039.047.039.045.04.044.04.043.04.041.04.04.041.039.041.037.041.036.041.034.041.033.042.032.042.03.042.029.042.027.042.026.043.024.043.023.043.021.043.02.043.018.044.017.043.015.044.013.044.012.044.011.045.009.044.007.045.006.045.004.045.002.045.001.045v17l-.001.045-.002.045-.004.045-.006.045-.007.045-.009.044-.011.045-.012.044-.013.044-.015.044-.017.043-.018.044-.02.043-.021.043-.023.043-.024.043-.026.043-.027.042-.029.042-.03.042-.032.042-.033.042-.034.041-.036.041-.037.041-.039.041-.04.041-.041.04-.043.04-.044.04-.045.04-.047.039-.048.039-.05.039-.051.039-.052.038-.053.038-.055.038-.055.038-.058.037-.058.037-.06.037-.06.036-.062.036-.064.036-.064.036-.066.035-.067.035-.068.035-.069.035-.07.034-.071.034-.073.033-.074.033-.15.066-.155.064-.16.063-.163.061-.168.06-.172.059-.175.057-.18.056-.183.054-.187.053-.191.051-.194.05-.198.048-.201.046-.205.045-.208.043-.211.041-.214.04-.217.038-.22.036-.223.034-.225.032-.229.031-.231.028-.233.027-.236.024-.239.023-.241.02-.242.019-.246.016-.247.015-.249.012-.251.01-.253.008-.255.005-.256.004-.258.001-.258-.001-.256-.004-.255-.005-.253-.008-.251-.01-.249-.012-.247-.015-.245-.016-.243-.019-.241-.02-.238-.023-.236-.024-.234-.027-.231-.028-.228-.031-.226-.032-.223-.034-.22-.036-.217-.038-.214-.04-.211-.041-.208-.043-.204-.045-.201-.046-.198-.048-.195-.05-.19-.051-.187-.053-.184-.054-.179-.056-.176-.057-.172-.059-.167-.06-.164-.061-.159-.063-.155-.064-.151-.066-.074-.033-.072-.033-.072-.034-.07-.034-.069-.035-.068-.035-.067-.035-.066-.035-.064-.036-.063-.036-.062-.036-.061-.036-.06-.037-.058-.037-.057-.037-.056-.038-.055-.038-.053-.038-.052-.038-.051-.039-.049-.039-.049-.039-.046-.039-.046-.04-.044-.04-.043-.04-.041-.04-.04-.041-.039-.041-.037-.041-.036-.041-.034-.041-.033-.042-.032-.042-.03-.042-.029-.042-.027-.042-.026-.043-.024-.043-.023-.043-.021-.043-.02-.043-.018-.044-.017-.043-.015-.044-.013-.044-.012-.044-.011-.045-.009-.044-.007-.045-.006-.045-.004-.045-.002-.045-.001-.045v-17l.001-.045.002-.045.004-.045.006-.045.007-.045.009-.044.011-.045.012-.044.013-.044.015-.044.017-.043.018-.044.02-.043.021-.043.023-.043.024-.043.026-.043.027-.042.029-.042.03-.042.032-.042.033-.042.034-.041.036-.041.037-.041.039-.041.04-.041.041-.04.043-.04.044-.04.046-.04.046-.039.049-.039.049-.039.051-.039.052-.038.053-.038.055-.038.056-.038.057-.037.058-.037.06-.037.061-.036.062-.036.063-.036.064-.036.066-.035.067-.035.068-.035.069-.035.07-.034.072-.034.072-.033.074-.033.151-.066.155-.064.159-.063.164-.061.167-.06.172-.059.176-.057.179-.056.184-.054.187-.053.19-.051.195-.05.198-.048.201-.046.204-.045.208-.043.211-.041.214-.04.217-.038.22-.036.223-.034.226-.032.228-.031.231-.028.234-.027.236-.024.238-.023.241-.02.243-.019.245-.016.247-.015.249-.012.251-.01.253-.008.255-.005.256-.004.258-.001.258.001zm-9.258 20.499v.01l.001.021.003.021.004.022.005.021.006.022.007.022.009.023.01.022.011.023.012.023.013.023.015.023.016.024.017.023.018.024.019.024.021.024.022.025.023.024.024.025.052.049.056.05.061.051.066.051.07.051.075.051.079.052.084.052.088.052.092.052.097.052.102.051.105.052.11.052.114.051.119.051.123.051.127.05.131.05.135.05.139.048.144.049.147.047.152.047.155.047.16.045.163.045.167.043.171.043.176.041.178.041.183.039.187.039.19.037.194.035.197.035.202.033.204.031.209.03.212.029.216.027.219.025.222.024.226.021.23.02.233.018.236.016.24.015.243.012.246.01.249.008.253.005.256.004.259.001.26-.001.257-.004.254-.005.25-.008.247-.011.244-.012.241-.014.237-.016.233-.018.231-.021.226-.021.224-.024.22-.026.216-.027.212-.028.21-.031.205-.031.202-.034.198-.034.194-.036.191-.037.187-.039.183-.04.179-.04.175-.042.172-.043.168-.044.163-.045.16-.046.155-.046.152-.047.148-.048.143-.049.139-.049.136-.05.131-.05.126-.05.123-.051.118-.052.114-.051.11-.052.106-.052.101-.052.096-.052.092-.052.088-.053.083-.051.079-.052.074-.052.07-.051.065-.051.06-.051.056-.05.051-.05.023-.024.023-.025.021-.024.02-.024.019-.024.018-.024.017-.024.015-.023.014-.024.013-.023.012-.023.01-.023.01-.022.008-.022.006-.022.006-.022.004-.022.004-.021.001-.021.001-.021v-4.127l-.077.055-.08.053-.083.054-.085.053-.087.052-.09.052-.093.051-.095.05-.097.05-.1.049-.102.049-.105.048-.106.047-.109.047-.111.046-.114.045-.115.045-.118.044-.12.043-.122.042-.124.042-.126.041-.128.04-.13.04-.132.038-.134.038-.135.037-.138.037-.139.035-.142.035-.143.034-.144.033-.147.032-.148.031-.15.03-.151.03-.153.029-.154.027-.156.027-.158.026-.159.025-.161.024-.162.023-.163.022-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.011-.178.01-.179.008-.179.008-.181.006-.182.005-.182.004-.184.003-.184.002h-.37l-.184-.002-.184-.003-.182-.004-.182-.005-.181-.006-.179-.008-.179-.008-.178-.01-.176-.011-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.022-.162-.023-.161-.024-.159-.025-.157-.026-.156-.027-.155-.027-.153-.029-.151-.03-.15-.03-.148-.031-.146-.032-.145-.033-.143-.034-.141-.035-.14-.035-.137-.037-.136-.037-.134-.038-.132-.038-.13-.04-.128-.04-.126-.041-.124-.042-.122-.042-.12-.044-.117-.043-.116-.045-.113-.045-.112-.046-.109-.047-.106-.047-.105-.048-.102-.049-.1-.049-.097-.05-.095-.05-.093-.052-.09-.051-.087-.052-.085-.053-.083-.054-.08-.054-.077-.054v4.127zm0-5.654v.011l.001.021.003.021.004.021.005.022.006.022.007.022.009.022.01.022.011.023.012.023.013.023.015.024.016.023.017.024.018.024.019.024.021.024.022.024.023.025.024.024.052.05.056.05.061.05.066.051.07.051.075.052.079.051.084.052.088.052.092.052.097.052.102.052.105.052.11.051.114.051.119.052.123.05.127.051.131.05.135.049.139.049.144.048.147.048.152.047.155.046.16.045.163.045.167.044.171.042.176.042.178.04.183.04.187.038.19.037.194.036.197.034.202.033.204.032.209.03.212.028.216.027.219.025.222.024.226.022.23.02.233.018.236.016.24.014.243.012.246.01.249.008.253.006.256.003.259.001.26-.001.257-.003.254-.006.25-.008.247-.01.244-.012.241-.015.237-.016.233-.018.231-.02.226-.022.224-.024.22-.025.216-.027.212-.029.21-.03.205-.032.202-.033.198-.035.194-.036.191-.037.187-.039.183-.039.179-.041.175-.042.172-.043.168-.044.163-.045.16-.045.155-.047.152-.047.148-.048.143-.048.139-.05.136-.049.131-.05.126-.051.123-.051.118-.051.114-.052.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.051.07-.052.065-.051.06-.05.056-.051.051-.049.023-.025.023-.024.021-.025.02-.024.019-.024.018-.024.017-.024.015-.023.014-.023.013-.024.012-.022.01-.023.01-.023.008-.022.006-.022.006-.022.004-.021.004-.022.001-.021.001-.021v-4.139l-.077.054-.08.054-.083.054-.085.052-.087.053-.09.051-.093.051-.095.051-.097.05-.1.049-.102.049-.105.048-.106.047-.109.047-.111.046-.114.045-.115.044-.118.044-.12.044-.122.042-.124.042-.126.041-.128.04-.13.039-.132.039-.134.038-.135.037-.138.036-.139.036-.142.035-.143.033-.144.033-.147.033-.148.031-.15.03-.151.03-.153.028-.154.028-.156.027-.158.026-.159.025-.161.024-.162.023-.163.022-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.011-.178.009-.179.009-.179.007-.181.007-.182.005-.182.004-.184.003-.184.002h-.37l-.184-.002-.184-.003-.182-.004-.182-.005-.181-.007-.179-.007-.179-.009-.178-.009-.176-.011-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.022-.162-.023-.161-.024-.159-.025-.157-.026-.156-.027-.155-.028-.153-.028-.151-.03-.15-.03-.148-.031-.146-.033-.145-.033-.143-.033-.141-.035-.14-.036-.137-.036-.136-.037-.134-.038-.132-.039-.13-.039-.128-.04-.126-.041-.124-.042-.122-.043-.12-.043-.117-.044-.116-.044-.113-.046-.112-.046-.109-.046-.106-.047-.105-.048-.102-.049-.1-.049-.097-.05-.095-.051-.093-.051-.09-.051-.087-.053-.085-.052-.083-.054-.08-.054-.077-.054v4.139zm0-5.666v.011l.001.02.003.022.004.021.005.022.006.021.007.022.009.023.01.022.011.023.012.023.013.023.015.023.016.024.017.024.018.023.019.024.021.025.022.024.023.024.024.025.052.05.056.05.061.05.066.051.07.051.075.052.079.051.084.052.088.052.092.052.097.052.102.052.105.051.11.052.114.051.119.051.123.051.127.05.131.05.135.05.139.049.144.048.147.048.152.047.155.046.16.045.163.045.167.043.171.043.176.042.178.04.183.04.187.038.19.037.194.036.197.034.202.033.204.032.209.03.212.028.216.027.219.025.222.024.226.021.23.02.233.018.236.017.24.014.243.012.246.01.249.008.253.006.256.003.259.001.26-.001.257-.003.254-.006.25-.008.247-.01.244-.013.241-.014.237-.016.233-.018.231-.02.226-.022.224-.024.22-.025.216-.027.212-.029.21-.03.205-.032.202-.033.198-.035.194-.036.191-.037.187-.039.183-.039.179-.041.175-.042.172-.043.168-.044.163-.045.16-.045.155-.047.152-.047.148-.048.143-.049.139-.049.136-.049.131-.051.126-.05.123-.051.118-.052.114-.051.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.052.07-.051.065-.051.06-.051.056-.05.051-.049.023-.025.023-.025.021-.024.02-.024.019-.024.018-.024.017-.024.015-.023.014-.024.013-.023.012-.023.01-.022.01-.023.008-.022.006-.022.006-.022.004-.022.004-.021.001-.021.001-.021v-4.153l-.077.054-.08.054-.083.053-.085.053-.087.053-.09.051-.093.051-.095.051-.097.05-.1.049-.102.048-.105.048-.106.048-.109.046-.111.046-.114.046-.115.044-.118.044-.12.043-.122.043-.124.042-.126.041-.128.04-.13.039-.132.039-.134.038-.135.037-.138.036-.139.036-.142.034-.143.034-.144.033-.147.032-.148.032-.15.03-.151.03-.153.028-.154.028-.156.027-.158.026-.159.024-.161.024-.162.023-.163.023-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.01-.178.01-.179.009-.179.007-.181.006-.182.006-.182.004-.184.003-.184.001-.185.001-.185-.001-.184-.001-.184-.003-.182-.004-.182-.006-.181-.006-.179-.007-.179-.009-.178-.01-.176-.01-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.023-.162-.023-.161-.024-.159-.024-.157-.026-.156-.027-.155-.028-.153-.028-.151-.03-.15-.03-.148-.032-.146-.032-.145-.033-.143-.034-.141-.034-.14-.036-.137-.036-.136-.037-.134-.038-.132-.039-.13-.039-.128-.041-.126-.041-.124-.041-.122-.043-.12-.043-.117-.044-.116-.044-.113-.046-.112-.046-.109-.046-.106-.048-.105-.048-.102-.048-.1-.05-.097-.049-.095-.051-.093-.051-.09-.052-.087-.052-.085-.053-.083-.053-.08-.054-.077-.054v4.153zm8.74-8.179l-.257.004-.254.005-.25.008-.247.011-.244.012-.241.014-.237.016-.233.018-.231.021-.226.022-.224.023-.22.026-.216.027-.212.028-.21.031-.205.032-.202.033-.198.034-.194.036-.191.038-.187.038-.183.04-.179.041-.175.042-.172.043-.168.043-.163.045-.16.046-.155.046-.152.048-.148.048-.143.048-.139.049-.136.05-.131.05-.126.051-.123.051-.118.051-.114.052-.11.052-.106.052-.101.052-.096.052-.092.052-.088.052-.083.052-.079.052-.074.051-.07.052-.065.051-.06.05-.056.05-.051.05-.023.025-.023.024-.021.024-.02.025-.019.024-.018.024-.017.023-.015.024-.014.023-.013.023-.012.023-.01.023-.01.022-.008.022-.006.023-.006.021-.004.022-.004.021-.001.021-.001.021.001.021.001.021.004.021.004.022.006.021.006.023.008.022.01.022.01.023.012.023.013.023.014.023.015.024.017.023.018.024.019.024.02.025.021.024.023.024.023.025.051.05.056.05.06.05.065.051.07.052.074.051.079.052.083.052.088.052.092.052.096.052.101.052.106.052.11.052.114.052.118.051.123.051.126.051.131.05.136.05.139.049.143.048.148.048.152.048.155.046.16.046.163.045.168.043.172.043.175.042.179.041.183.04.187.038.191.038.194.036.198.034.202.033.205.032.21.031.212.028.216.027.22.026.224.023.226.022.231.021.233.018.237.016.241.014.244.012.247.011.25.008.254.005.257.004.26.001.26-.001.257-.004.254-.005.25-.008.247-.011.244-.012.241-.014.237-.016.233-.018.231-.021.226-.022.224-.023.22-.026.216-.027.212-.028.21-.031.205-.032.202-.033.198-.034.194-.036.191-.038.187-.038.183-.04.179-.041.175-.042.172-.043.168-.043.163-.045.16-.046.155-.046.152-.048.148-.048.143-.048.139-.049.136-.05.131-.05.126-.051.123-.051.118-.051.114-.052.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.051.07-.052.065-.051.06-.05.056-.05.051-.05.023-.025.023-.024.021-.024.02-.025.019-.024.018-.024.017-.023.015-.024.014-.023.013-.023.012-.023.01-.023.01-.022.008-.022.006-.023.006-.021.004-.022.004-.021.001-.021.001-.021-.001-.021-.001-.021-.004-.021-.004-.022-.006-.021-.006-.023-.008-.022-.01-.022-.01-.023-.012-.023-.013-.023-.014-.023-.015-.024-.017-.023-.018-.024-.019-.024-.02-.025-.021-.024-.023-.024-.023-.025-.051-.05-.056-.05-.06-.05-.065-.051-.07-.052-.074-.051-.079-.052-.083-.052-.088-.052-.092-.052-.096-.052-.101-.052-.106-.052-.11-.052-.114-.052-.118-.051-.123-.051-.126-.051-.131-.05-.136-.05-.139-.049-.143-.048-.148-.048-.152-.048-.155-.046-.16-.046-.163-.045-.168-.043-.172-.043-.175-.042-.179-.041-.183-.04-.187-.038-.191-.038-.194-.036-.198-.034-.202-.033-.205-.032-.21-.031-.212-.028-.216-.027-.22-.026-.224-.023-.226-.022-.231-.021-.233-.018-.237-.016-.241-.014-.244-.012-.247-.011-.25-.008-.254-.005-.257-.004-.26-.001-.26.001z"/></symbol></defs><defs><symbol id="my-svg-clock" width="24" height="24"><path transform="scale(.5)" d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.848 12.459c.202.038.202.333.001.372-1.907.361-6.045 1.111-6.547 1.111-.719 0-1.301-.582-1.301-1.301 0-.512.77-5.447 1.125-7.445.034-.192.312-.181.343.014l.985 6.238 5.394 1.011z"/></symbol></defs><defs><marker id="my-svg-arrowhead" refX="7.9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M -1 0 L 10 5 L 0 10 z"/></marker></defs><defs><marker id="my-svg-crosshead" markerWidth="15" markerHeight="8" orient="auto" refX="4" refY="4.5"><path fill="none" stroke="#000000" stroke-width="1pt" d="M 1,2 L 6,7 M 6,2 L 1,7" style="stroke-dasharray: 0, 0;"/></marker></defs><defs><marker id="my-svg-filled-head" refX="15.5" refY="7" markerWidth="20" markerHeight="28" orient="auto"><path d="M 18,7 L9,13 L14,7 L9,1 Z"/></marker></defs><defs><marker id="my-svg-sequencenumber" refX="15" refY="15" markerWidth="60" markerHeight="40" orient="auto"><circle cx="15" cy="15" r="6"/></marker></defs><defs><marker id="my-svg-solidTopArrowHead" refX="7.9" refY="7.25" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 10 8 L 0 8 z"/></marker></defs><defs><marker id="my-svg-solidBottomArrowHead" refX="7.9" refY="0.75" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 10 0 L 0 8 z"/></marker></defs><defs><marker id="my-svg-stickTopArrowHead" refX="7.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 7 7" stroke="black" stroke-width="1.5" fill="none"/></marker></defs><defs><marker id="my-svg-stickBottomArrowHead" refX="7.5" refY="0" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 7 L 7 0" stroke="black" stroke-width="1.5" fill="none"/></marker></defs><text x="590" y="80" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Set status to waiting_for_human</text><path d="M 590,109 C 650,99 650,139 590,129" class="messageLine0" data-et="message" data-id="i0" data-from="A" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="434" y="154" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Send approved handoff notice</text><line x1="588" y1="183" x2="279" y2="183" class="messageLine0" data-et="message" data-id="i1" data-from="A" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="177" y="198" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Handoff notice</text><line x1="274" y1="227" x2="79" y2="227" class="messageLine0" data-et="message" data-id="i2" data-from="W" data-to="U" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="174" y="242" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Follow-up message</text><line x1="76" y1="271" x2="271" y2="271" class="messageLine0" data-et="message" data-id="i3" data-from="U" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="431" y="286" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Store message without invoking LLM</text><line x1="276" y1="315" x2="585" y2="315" class="messageLine0" data-et="message" data-id="i4" data-from="W" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="543" y="330" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Staff reply from WhatsApp Business</text><line x1="806" y1="359" x2="279" y2="359" class="messageLine0" data-et="message" data-id="i5" data-from="S" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="431" y="374" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Staff-message echo</text><line x1="276" y1="403" x2="585" y2="403" class="messageLine0" data-et="message" data-id="i6" data-from="W" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="590" y="418" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Set status to human and store reply</text><path d="M 590,447 C 650,437 650,477 590,467" class="messageLine0" data-et="message" data-id="i7" data-from="A" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><text x="177" y="492" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Staff response</text><line x1="274" y1="521" x2="79" y2="521" class="messageLine0" data-et="message" data-id="i8" data-from="W" data-to="U" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/></svg></div><h4>Custom-interface fallback</h4>
+<p>When Coexistence is unavailable:</p>
+<pre><code class="language-text">waiting_for_human conversation
+-&gt; appears in protected staff interface
+-&gt; staff claims conversation
+-&gt; staff writes response
+-&gt; API sends response through WhatsApp Cloud API
+-&gt; bot remains paused until staff closes or releases conversation
+</code></pre>
+<h2>8. Local persistence</h2>
+<p>SQLite is the single prototype data store.</p>
+<h3>8.1 Suggested schema</h3>
+<pre><code class="language-sql">CREATE TABLE contacts (
+  id TEXT PRIMARY KEY,
+  whatsapp_id_encrypted TEXT NOT NULL,
+  display_name TEXT,
+  preferred_language TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE conversations (
+  id TEXT PRIMARY KEY,
+  contact_id TEXT NOT NULL,
+  status TEXT NOT NULL,
+  assigned_to TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  closed_at TEXT,
+  FOREIGN KEY (contact_id) REFERENCES contacts(id)
+);
+
+CREATE TABLE messages (
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL,
+  provider_message_id TEXT UNIQUE,
+  direction TEXT NOT NULL,
+  sender_type TEXT NOT NULL,
+  input_type TEXT NOT NULL,
+  language TEXT,
+  content TEXT NOT NULL,
+  citations_json TEXT,
+  model_deployment TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+);
+
+CREATE TABLE handoffs (
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL,
+  assigned_to TEXT,
+  created_at TEXT NOT NULL,
+  resolved_at TEXT,
+  FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+);
+
+CREATE TABLE feedback (
+  id TEXT PRIMARY KEY,
+  message_id TEXT NOT NULL,
+  rating TEXT NOT NULL,
+  notes TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (message_id) REFERENCES messages(id)
+);
+
+CREATE TABLE audit_events (
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT,
+  event_type TEXT NOT NULL,
+  details_json TEXT,
+  created_at TEXT NOT NULL
+);
+</code></pre>
+<p>Exact WhatsApp identifiers should be encrypted or replaced by a keyed hash where the
+raw value is not operationally required.</p>
+<h3>8.2 Suggested service layout</h3>
+<pre><code class="language-text">src\
+  api\
+    whatsapp-webhook.ts
+    staff-api.ts
+  application\
+    process-message.ts
+    conversation-service.ts
+    handoff-service.ts
+  domain\
+    messages.ts
+    conversations.ts
+    support-result.ts
+  infrastructure\
+    azure-language-model.ts
+    azure-speech-transcriber.ts
+    meta-whatsapp.ts
+    sqlite.ts
+    manual-repository.ts
+  policy\
+    routing-rules.ts
+    safeguarding-rules.ts
+  prompts\
+    support-system-prompt.ts
+  validation\
+    model-response.ts
+data\
+  app.db
+  logs\
+manual\
+  sal-guide-chunks.jsonl
+</code></pre>
+<h2>9. Security, privacy, and safeguarding</h2>
+<h3>9.1 Data minimization</h3>
+<p>Send Azure only:</p>
+<ul>
+<li>the current question or transcript;</li>
+<li>a small recent conversation window;</li>
+<li>the approved manual chunks;</li>
+<li>response instructions.</li>
+</ul>
+<p>Do not send:</p>
+<ul>
+<li>WhatsApp phone numbers;</li>
+<li>internal staff notes;</li>
+<li>authentication data;</li>
+<li>complete user profiles;</li>
+<li>unrelated conversation history.</li>
+</ul>
+<h3>9.2 Audio handling</h3>
+<ul>
+<li>Validate media type and configured size.</li>
+<li>Use random temporary filenames.</li>
+<li>Do not log audio bytes or signed download URLs.</li>
+<li>Delete temporary files after transcription, including failure paths.</li>
+<li>Retain recordings only if SAL defines a justified and approved policy.</li>
+</ul>
+<h3>9.3 Secrets</h3>
+<ul>
+<li>Load Azure and Meta credentials from the deployment secret store.</li>
+<li>Never store credentials in source code, SQLite, or logs.</li>
+<li>Rotate secrets according to organizational policy.</li>
+<li>Use the minimum required permissions.</li>
+</ul>
+<h3>9.4 Safeguarding</h3>
+<p>Safeguarding responses are approved by SAL and implemented as deterministic policy.
+The model can classify or recommend escalation, but it cannot investigate allegations,
+promise confidentiality, or decide whether a report is valid.</p>
+<p>The five image-transcribed appendix records must receive human verification before
+they are used in a production safeguarding response.</p>
+<h2>10. Reliability and failure handling</h2>
+<h3>10.1 Idempotency</h3>
+<p><code>provider_message_id</code> is unique. Receiving the same webhook more than once must not
+produce duplicate model calls or duplicate WhatsApp replies.</p>
+<h3>10.2 Timeouts and retries</h3>
+<ul>
+<li>Acknowledge the WhatsApp webhook promptly.</li>
+<li>Store work before starting Azure inference.</li>
+<li>Retry transient Azure and Meta failures with bounded exponential backoff.</li>
+<li>Do not retry invalid requests or permanent authorization failures.</li>
+<li>Never report success until the outbound message is accepted.</li>
+</ul>
+<p>For the earliest demo, processing may happen in the request path. Before external
+testing, use a durable SQLite-backed work queue so webhook handling is not coupled to
+model latency.</p>
+<h3>10.3 Safe fallback</h3>
+<p>When transcription, inference, validation, or outbound delivery fails:</p>
+<ol>
+<li>Record the failure without sensitive prompt content.</li>
+<li>Avoid sending a success-shaped answer.</li>
+<li>Retry only when the failure is transient.</li>
+<li>Transfer to staff or send an approved temporary-failure response.</li>
+</ol>
+<h2>11. Observability</h2>
+<p>Record:</p>
+<ul>
+<li>inbound message count by text or voice;</li>
+<li>processing latency by stage;</li>
+<li>Azure transcription and generation latency;</li>
+<li>Azure token usage when returned;</li>
+<li>supported versus unsupported answers;</li>
+<li>handoff count and reason;</li>
+<li>citation-validation failures;</li>
+<li>duplicate webhook count;</li>
+<li>outbound delivery failures;</li>
+<li>staff feedback and correction rate.</li>
+</ul>
+<p>Logs should use generated contact and conversation IDs rather than phone numbers.
+Prompt and transcript logging is disabled by default.</p>
+<h2>12. Cost model</h2>
+<p>The primary variable costs are:</p>
+<ul>
+<li>GPT-5.6 Luna input and output tokens.</li>
+<li>Azure speech transcription for voice messages.</li>
+<li>WhatsApp messaging charges.</li>
+<li>Hosting and persistent storage.</li>
+</ul>
+<p>Using an illustrative 15,000 input tokens and 250 output tokens per full-manual request,
+the previously assessed Luna model cost is approximately:</p>
+<table>
+<thead>
+<tr>
+<th align="right">Answers</th>
+<th align="right">Approximate LLM cost</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="right">100</td>
+<td align="right">$0.33</td>
+</tr>
+<tr>
+<td align="right">1,000</td>
+<td align="right">$3.30</td>
+</tr>
+<tr>
+<td align="right">10,000</td>
+<td align="right">$33.00</td>
+</tr>
+</tbody></table>
+<p>These are planning estimates, not billing guarantees. Confirm prices for the selected
+Azure region, deployment type, currency, and agreement before launch. Track actual
+token usage from the first demo.</p>
+<p>Prompt caching may lower repeated manual-input cost, but the business case must not
+depend on cache eligibility.</p>
+<h2>13. Quality and acceptance criteria</h2>
+<p>Create a reviewed evaluation set of at least 50 questions:</p>
+<ul>
+<li>direct English questions;</li>
+<li>paraphrased English questions;</li>
+<li>Kiswahili questions;</li>
+<li>English/Kiswahili code-switching;</li>
+<li>vague conversational follow-ups;</li>
+<li>questions requiring more than one section;</li>
+<li>questions not answered by the manual;</li>
+<li>safeguarding and human-handoff cases;</li>
+<li>clear and noisy voice recordings.</li>
+</ul>
+<p>Prototype acceptance targets:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th align="right">Target</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Correctly grounded factual answers</td>
+<td align="right">At least 90%</td>
+</tr>
+<tr>
+<td>Valid citations for supported answers</td>
+<td align="right">100%</td>
+</tr>
+<tr>
+<td>Unsupported questions correctly refused or handed off</td>
+<td align="right">At least 95%</td>
+</tr>
+<tr>
+<td>Explicit human requests transferred</td>
+<td align="right">100%</td>
+</tr>
+<tr>
+<td>Safeguarding test cases routed according to approved policy</td>
+<td align="right">100%</td>
+</tr>
+<tr>
+<td>Duplicate messages producing duplicate replies</td>
+<td align="right">0%</td>
+</tr>
+<tr>
+<td>English/Kiswahili response-language match</td>
+<td align="right">At least 95%</td>
+</tr>
+</tbody></table>
+<p>SAL staff and a fluent Kiswahili reviewer must approve the evaluation set and review
+failures before public use.</p>
+<h2>14. Prototype implementation phases</h2>
+<h3>Phase 1: Local text demo</h3>
+<ul>
+<li>Load and validate the manual JSONL.</li>
+<li>Implement full-context prompt construction.</li>
+<li>Integrate GPT-5.6 Luna through Azure.</li>
+<li>Provide a local browser chat UI.</li>
+<li>Validate structured output and citations.</li>
+<li>Persist conversations in SQLite.</li>
+</ul>
+<h3>Phase 2: WhatsApp text integration</h3>
+<ul>
+<li>Configure Meta application and test phone number.</li>
+<li>Implement webhook verification and message deduplication.</li>
+<li>Send grounded text replies.</li>
+<li>Add delivery-state handling.</li>
+<li>Confirm whether SAL has a WhatsApp Business number eligible for Coexistence.</li>
+<li>If eligible, configure and test staff-message echoes before using the live number.</li>
+</ul>
+<h3>Phase 3: Voice input</h3>
+<ul>
+<li>Download WhatsApp audio securely.</li>
+<li>Integrate MAI-Transcribe-2 or Azure Speech.</li>
+<li>Process transcripts through the same support pipeline.</li>
+<li>Delete temporary media.</li>
+<li>Add transcript confirmation for consequential requests.</li>
+</ul>
+<h3>Phase 4: Staff handoff and evaluation</h3>
+<ul>
+<li>If Coexistence is available, implement WhatsApp Business app handoff and staff-message
+echo processing.</li>
+<li>If Coexistence is unavailable, add the protected custom staff chat interface.</li>
+<li>Implement conversation claim, reply, and close actions.</li>
+<li>Run the reviewed multilingual and voice evaluation suite.</li>
+<li>Resolve high-impact failures before external testing.</li>
+</ul>
+<h2>15. Evolution to local hybrid retrieval</h2>
+<p>Add retrieval when:</p>
+<ul>
+<li>the number of manuals grows;</li>
+<li>full-context latency becomes unacceptable;</li>
+<li>traffic makes repeated full-context input materially expensive;</li>
+<li>evaluation reveals attention or section-selection failures;</li>
+<li>different audiences need filtered knowledge.</li>
+</ul>
+<p>Target future flow:</p>
+<pre><code class="language-text">Question
+-&gt; optional English query normalization
+-&gt; local keyword and vector search
+-&gt; reciprocal-rank fusion
+-&gt; best 5-8 chunks
+-&gt; GPT-5.6 Luna
+-&gt; local citation validation
+</code></pre>
+<p>Potential future components:</p>
+<ul>
+<li>Cohere Embed 4 deployed through Microsoft Foundry.</li>
+<li>Local embedded LanceDB.</li>
+<li>Full-text and vector hybrid search.</li>
+<li>Reciprocal Rank Fusion.</li>
+<li>Optional reranking only if measured retrieval quality requires it.</li>
+</ul>
+<p>The <code>LanguageModelGateway</code>, <code>KnowledgeRepository</code>, and <code>processMessage</code> interfaces
+should prevent this migration from affecting WhatsApp, staff handoff, or persistence.</p>
+<h2>16. Risks and mitigations</h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Model overlooks a relevant passage in full context</td>
+<td>Preserve chunk boundaries, require chunk IDs, evaluate with real questions</td>
+</tr>
+<tr>
+<td>Model produces unsupported information</td>
+<td>Strict prompt, schema validation, citation validation, safe fallback</td>
+</tr>
+<tr>
+<td>Kiswahili translation changes a procedure</td>
+<td>Preserve cited English evidence and review multilingual tests</td>
+</tr>
+<tr>
+<td>Voice transcription changes important details</td>
+<td>Confirm consequential transcripts and offer text fallback</td>
+</tr>
+<tr>
+<td>Safeguarding response is mishandled</td>
+<td>Deterministic approved routing and immediate staff handoff</td>
+</tr>
+<tr>
+<td>SAL number is not eligible for Coexistence</td>
+<td>Use a protected custom staff chat interface for Cloud API replies</td>
+</tr>
+<tr>
+<td>Bot interrupts a WhatsApp staff conversation</td>
+<td>Consume staff-message echoes and pause bot in handoff states</td>
+</tr>
+<tr>
+<td>Webhook is delivered more than once</td>
+<td>Unique provider message ID and idempotent processing</td>
+</tr>
+<tr>
+<td>Temporary voice files expose personal data</td>
+<td>Random filenames, restrictive access, guaranteed deletion</td>
+</tr>
+<tr>
+<td>Local SQLite or manual data is lost</td>
+<td>Persistent volume and scheduled encrypted backup</td>
+</tr>
+<tr>
+<td>Model cost grows with traffic</td>
+<td>Track tokens, enable caching where applicable, migrate to local retrieval</td>
+</tr>
+<tr>
+<td>Manual becomes outdated</td>
+<td>Version the manual and record the version used for each generated answer</td>
+</tr>
+</tbody></table>
+<h2>17. Open decisions before implementation</h2>
+<p>SAL stakeholders must confirm:</p>
+<ol>
+<li>Approved Azure region and GPT-5.6 Luna deployment.</li>
+<li>Approved transcription deployment and supported locales.</li>
+<li>Exact safeguarding and emergency routing messages.</li>
+<li>Human support hours and expected response wording.</li>
+<li>Conversation, transcript, and audit retention periods.</li>
+<li>Staff authentication method for the prototype.</li>
+<li>Whether voice recordings may ever be retained.</li>
+<li>Final proofing and approval of the five image-transcribed manual chunks.</li>
+<li>Whether SAL&#39;s current WhatsApp Business number is eligible and enabled for
+WhatsApp Business App Coexistence.</li>
+<li>Whether SAL accepts a protected custom staff chat interface if Coexistence is
+unavailable.</li>
+</ol>
+</article>
+      <p class="footer">Standalone HTML document with inline SVG diagrams.</p>
+    </main>
+  </div>
+  <script>(() => {
+  const toc = document.getElementById('toc');
+  const headings = [...document.querySelectorAll('article h2')];
+  headings.forEach((heading, index) => {
+    if (!heading.id) heading.id = `section-${index + 1}`;
+    const link = document.createElement('a');
+    link.href = `#${heading.id}`;
+    link.textContent = heading.textContent;
+    toc.appendChild(link);
+  });
+  if (location.hash) {
+    requestAnimationFrame(() => document.querySelector(location.hash)?.scrollIntoView());
+  }
+  if ('IntersectionObserver' in window) {
+    const links = [...toc.querySelectorAll('a')];
+    const observer = new IntersectionObserver(entries => {
+      entries.filter(entry => entry.isIntersecting).forEach(entry => {
+        links.forEach(link => link.classList.toggle('active', link.hash === `#${entry.target.id}`));
+      });
+    }, { rootMargin: '-15% 0px -75% 0px' });
+    headings.forEach(heading => observer.observe(heading));
+  }
+})();</script>
+</body>
+</html>
+
+
