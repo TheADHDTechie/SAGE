@@ -134,3 +134,17 @@ npm run eval:synthetic
 
 Generated evaluation reports are written to `reports\` and are excluded from source
 control.
+
+## Deploy to Azure
+
+The service includes a production Linux `Dockerfile` and an Azure Container Apps Bicep
+deployment. Local Docker is not required because Azure Container Registry builds the
+image remotely:
+
+```powershell
+az account set --subscription "Visual Studio Enterprise Subscription"
+.\deploy\Deploy-Azure.ps1
+```
+
+See [`deploy\README.md`](deploy/README.md) for resource defaults, deployment updates,
+managed identity, and secure WhatsApp activation.

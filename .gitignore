@@ -7,3 +7,4 @@ coverage/
 *.log
 *.tmp
 .vitest/
+deploy/.azure.local.env
