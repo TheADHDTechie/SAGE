@@ -40,6 +40,21 @@ To deploy an image that is already in the registry:
   -SkipBuild
 ```
 
+## Verify the callback before enabling messaging
+
+Meta callback verification can be enabled before the App Secret, access token, and
+phone-number ID are available:
+
+```powershell
+$env:WHATSAPP_VERIFY_TOKEN = Read-Host "WhatsApp verification token"
+.\deploy\Deploy-Azure.ps1
+```
+
+This enables the callback challenge route while keeping inbound message processing and
+outbound responses disabled. Do not subscribe the `messages` field until the remaining
+Meta credentials have been configured and the deployment has been run with
+`-EnableWhatsApp`.
+
 ## Enable WhatsApp
 
 Set the Meta values only in the current PowerShell process. Do not save them in source

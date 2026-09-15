@@ -15,7 +15,10 @@ import type { SpeechTranscriber } from "./gateways/speech-transcriber.js";
 import type { WhatsAppGateway } from "./gateways/whatsapp.js";
 import { ConversationStore } from "./infrastructure/database.js";
 import { ManualRepository } from "./knowledge/manual-repository.js";
-import { registerWhatsAppRoutes } from "./whatsapp/whatsapp-webhook.js";
+import {
+  registerWhatsAppRoutes,
+  registerWhatsAppVerificationRoute,
+} from "./whatsapp/whatsapp-webhook.js";
 
 const testMessageSchema = z.object({
   externalMessageId: z.string().min(1).max(200),
@@ -230,6 +233,13 @@ export async function buildApp(
       gateway: whatsAppGateway,
       rawBodyFor: (request) => rawJsonBodies.get(request),
     });
+  }
+
+  if (config.WHATSAPP_VERIFY_TOKEN) {
+    registerWhatsAppVerificationRoute(
+      app,
+      config.WHATSAPP_VERIFY_TOKEN,
+    );
   }
 
   app.addHook("onClose", async () => {

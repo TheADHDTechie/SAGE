@@ -58,7 +58,7 @@ npm run eval:synthetic
 
 Expected results:
 
-- 44 automated tests pass.
+- 45 automated tests pass.
 - 150 generated message scenarios pass in mock mode.
 - Evaluation reports are written to `reports\`.
 

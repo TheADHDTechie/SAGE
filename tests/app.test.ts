@@ -62,6 +62,30 @@ describe("HTTP API", () => {
     expect(response.statusCode).toBe(404);
   });
 
+  it("can expose callback verification before full WhatsApp messaging is enabled", async () => {
+    const config = {
+      ...testConfig(),
+      WHATSAPP_VERIFY_TOKEN: "verification-only-token",
+    };
+    const { app } = await buildApp(config);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/webhooks/whatsapp?hub.mode=subscribe&hub.verify_token=verification-only-token&hub.challenge=54321",
+    });
+    const postResponse = await app.inject({
+      method: "POST",
+      url: "/webhooks/whatsapp",
+      headers: { "content-type": "application/json" },
+      payload: "{}",
+    });
+    await app.close();
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toBe("54321");
+    expect(postResponse.statusCode).toBe(404);
+  });
+
   it("protects test endpoints", async () => {
     const { app } = await buildApp(testConfig());
 

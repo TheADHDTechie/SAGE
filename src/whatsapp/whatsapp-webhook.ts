@@ -102,7 +102,6 @@ export function registerWhatsAppRoutes(
     gateway,
     rawBodyFor,
   } = dependencies;
-  const verifyToken = required(config.WHATSAPP_VERIFY_TOKEN, "WHATSAPP_VERIFY_TOKEN");
   const appSecret = required(config.META_APP_SECRET, "META_APP_SECRET");
   const phoneNumberId = required(
     config.WHATSAPP_PHONE_NUMBER_ID,
@@ -110,21 +109,6 @@ export function registerWhatsAppRoutes(
   );
   const staffApiToken = required(config.STAFF_API_TOKEN, "STAFF_API_TOKEN");
   const senderQueue = new SenderSerialQueue();
-
-  app.get("/webhooks/whatsapp", async (request, reply) => {
-    const query = verificationQuerySchema.safeParse(request.query);
-    if (
-      !query.success ||
-      !safeStringEqual(query.data["hub.verify_token"], verifyToken)
-    ) {
-      return reply.code(403).type("text/plain").send("Forbidden");
-    }
-
-    return reply
-      .code(200)
-      .type("text/plain")
-      .send(query.data["hub.challenge"]);
-  });
 
   app.post("/webhooks/whatsapp", async (request, reply) => {
     const rawBody = rawBodyFor(request);
@@ -269,6 +253,26 @@ export function registerWhatsAppRoutes(
           ? "The next message will start a new bot conversation."
           : "No active conversation was found.",
     });
+  });
+}
+
+export function registerWhatsAppVerificationRoute(
+  app: FastifyInstance,
+  verifyToken: string,
+) {
+  app.get("/webhooks/whatsapp", async (request, reply) => {
+    const query = verificationQuerySchema.safeParse(request.query);
+    if (
+      !query.success ||
+      !safeStringEqual(query.data["hub.verify_token"], verifyToken)
+    ) {
+      return reply.code(403).type("text/plain").send("Forbidden");
+    }
+
+    return reply
+      .code(200)
+      .type("text/plain")
+      .send(query.data["hub.challenge"]);
   });
 }
 
