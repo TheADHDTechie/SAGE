@@ -254,6 +254,18 @@ export function registerWhatsAppRoutes(
           : "No active conversation was found.",
     });
   });
+
+  app.get("/api/staff/diagnostics", async (request, reply) => {
+    const authorization = request.headers.authorization;
+    if (
+      !authorization?.startsWith("Bearer ") ||
+      !safeStringEqual(authorization.slice("Bearer ".length), staffApiToken)
+    ) {
+      return reply.code(401).send({ error: "Unauthorized staff request" });
+    }
+
+    return reply.code(200).send(store.whatsAppDiagnostics());
+  });
 }
 
 export function registerWhatsAppVerificationRoute(

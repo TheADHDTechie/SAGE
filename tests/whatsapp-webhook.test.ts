@@ -535,6 +535,39 @@ describe("WhatsApp webhook", () => {
 
     expect(response.statusCode).toBe(401);
   });
+
+  it("reports privacy-safe WhatsApp diagnostics to authorized staff", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const { app } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+    await injectWebhook(app, textPayload("message-diagnostics"));
+
+    const unauthorized = await app.inject({
+      method: "GET",
+      url: "/api/staff/diagnostics",
+    });
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/staff/diagnostics",
+      headers: { authorization: "Bearer test-staff-token" },
+    });
+    await app.close();
+
+    expect(unauthorized.statusCode).toBe(401);
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      messages: { inbound: 1, outbound: 1 },
+      deliveries: { sent: 1 },
+      deliveryAttempts: 1,
+      recentFailures: {
+        deliveries: [],
+        auditEvents: [],
+      },
+    });
+    expect(response.body).not.toContain("254700000001");
+    expect(response.body).not.toContain("How should books be organized?");
+  });
 });
 
 async function injectWebhook(

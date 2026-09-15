@@ -394,6 +394,96 @@ export class ConversationStore {
       .run(new Date().toISOString(), inboundMessageId);
   }
 
+  whatsAppDiagnostics() {
+    const countBy = (table: string, column: string) =>
+      Object.fromEntries(
+        (
+          this.database
+            .prepare(
+              `SELECT ${column} AS name, COUNT(*) AS count
+               FROM ${table}
+               GROUP BY ${column}`,
+            )
+            .all() as Array<{ name: string; count: number }>
+        ).map((row) => [row.name, row.count]),
+      );
+    const scalar = (sql: string) =>
+      (
+        this.database.prepare(sql).get() as
+          | { count: number }
+          | undefined
+      )?.count ?? 0;
+    const latest = this.database
+      .prepare(
+        `SELECT MAX(updated_at) AS latestActivityAt
+         FROM (
+           SELECT updated_at FROM conversations
+           UNION ALL
+           SELECT updated_at FROM whatsapp_deliveries
+         )`,
+      )
+      .get() as { latestActivityAt: string | null };
+    const deliveryFailures = this.database
+      .prepare(
+        `SELECT attempts, last_error AS error, updated_at AS updatedAt
+         FROM whatsapp_deliveries
+         WHERE status = 'failed' AND last_error IS NOT NULL
+         ORDER BY updated_at DESC
+         LIMIT 5`,
+      )
+      .all() as Array<{
+        attempts: number;
+        error: string;
+        updatedAt: string;
+      }>;
+    const auditFailures = (
+      this.database
+        .prepare(
+          `SELECT event_type AS eventType,
+                  details_json AS detailsJson,
+                  created_at AS createdAt
+           FROM audit_events
+           WHERE event_type LIKE '%failure'
+           ORDER BY created_at DESC
+           LIMIT 5`,
+        )
+        .all() as Array<{
+          eventType: string;
+          detailsJson: string | null;
+          createdAt: string;
+        }>
+    ).map((row) => {
+      const details = row.detailsJson
+        ? (JSON.parse(row.detailsJson) as Record<string, unknown>)
+        : {};
+      return {
+        eventType: row.eventType,
+        error:
+          typeof details.error === "string"
+            ? details.error.slice(0, 500)
+            : "No error detail",
+        createdAt: row.createdAt,
+      };
+    });
+
+    return {
+      generatedAt: new Date().toISOString(),
+      latestActivityAt: latest.latestActivityAt,
+      conversations: countBy("conversations", "status"),
+      messages: countBy("messages", "direction"),
+      handoffs: countBy("handoffs", "status"),
+      deliveries: countBy("whatsapp_deliveries", "status"),
+      deliveryAttempts: scalar(
+        "SELECT COALESCE(SUM(attempts), 0) AS count FROM whatsapp_deliveries",
+      ),
+      auditEvents: countBy("audit_events", "event_type"),
+      recentFailures: {
+        deliveries: deliveryFailures,
+        auditEvents: auditFailures,
+      },
+    };
+  }
+
   markWhatsAppDeliveryFailed(inboundMessageId: string, error: string) {
     this.database
       .prepare(

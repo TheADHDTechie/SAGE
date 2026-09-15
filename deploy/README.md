@@ -78,6 +78,19 @@ https://<container-app-host>/webhooks/whatsapp
 
 Use the exact `WHATSAPP_VERIFY_TOKEN` value when Meta verifies the callback.
 
+## Monitor WhatsApp
+
+After deploying with `-EnableWhatsApp`, use the protected diagnostics monitor to
+observe aggregate traffic and delivery outcomes without exposing phone numbers or
+message content:
+
+```powershell
+.\deploy\Monitor-WhatsApp.ps1
+```
+
+The monitor reads `STAFF_API_TOKEN` from the gitignored
+`deploy\.azure.local.env` file. Stop it with `Ctrl+C`.
+
 ## Azure AI authentication
 
 The Container App has a system-assigned managed identity. Grant that identity
