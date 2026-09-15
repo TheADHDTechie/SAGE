@@ -15,6 +15,27 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$localEnvironmentFile = Join-Path $PSScriptRoot ".azure.local.env"
+if (Test-Path $localEnvironmentFile) {
+  foreach ($line in Get-Content $localEnvironmentFile) {
+    $trimmed = $line.Trim()
+    if (-not $trimmed -or $trimmed.StartsWith("#")) {
+      continue
+    }
+
+    $separator = $trimmed.IndexOf("=")
+    if ($separator -lt 1) {
+      throw "Invalid entry in $localEnvironmentFile."
+    }
+
+    $name = $trimmed.Substring(0, $separator).Trim()
+    $value = $trimmed.Substring($separator + 1).Trim()
+    if (-not [Environment]::GetEnvironmentVariable($name)) {
+      [Environment]::SetEnvironmentVariable($name, $value)
+    }
+  }
+}
+
 function Assert-AzureCommand {
   param([string] $Action)
 

@@ -57,16 +57,12 @@ Meta credentials have been configured and the deployment has been run with
 
 ## Enable WhatsApp
 
-Set the Meta values only in the current PowerShell process. Do not save them in source
-control or shell history.
+Copy the gitignored local environment template and enter the values without placing
+them in source control or shell history:
 
 ```powershell
-$env:SAGE_CONTACT_HASH_KEY = Read-Host "Stable contact hash key"
-$env:WHATSAPP_VERIFY_TOKEN = Read-Host "WhatsApp verification token"
-$env:META_APP_SECRET = Read-Host "Meta app secret"
-$env:WHATSAPP_ACCESS_TOKEN = Read-Host "WhatsApp access token"
-$env:WHATSAPP_PHONE_NUMBER_ID = Read-Host "WhatsApp phone number ID"
-$env:STAFF_API_TOKEN = Read-Host "Staff API token"
+Copy-Item deploy\.azure.local.env.example deploy\.azure.local.env
+notepad deploy\.azure.local.env
 
 .\deploy\Deploy-Azure.ps1 `
   -EnableWhatsApp `
@@ -81,17 +77,6 @@ https://<container-app-host>/webhooks/whatsapp
 ```
 
 Use the exact `WHATSAPP_VERIFY_TOKEN` value when Meta verifies the callback.
-
-Clear the current PowerShell values afterward:
-
-```powershell
-Remove-Item Env:SAGE_CONTACT_HASH_KEY
-Remove-Item Env:WHATSAPP_VERIFY_TOKEN
-Remove-Item Env:META_APP_SECRET
-Remove-Item Env:WHATSAPP_ACCESS_TOKEN
-Remove-Item Env:WHATSAPP_PHONE_NUMBER_ID
-Remove-Item Env:STAFF_API_TOKEN
-```
 
 ## Azure AI authentication
 
