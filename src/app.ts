@@ -1,6 +1,10 @@
 import path from "node:path";
 import multipart from "@fastify/multipart";
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify, {
+  LogController,
+  type FastifyInstance,
+  type FastifyRequest,
+} from "fastify";
 import { z } from "zod";
 import { SupportAssistant } from "./application/support-assistant.js";
 import type { AppConfig } from "./config.js";
@@ -8,8 +12,10 @@ import type { LanguageModelGateway } from "./gateways/language-model.js";
 import { MockLanguageModelGateway } from "./gateways/mock-language-model.js";
 import { MockSpeechTranscriber } from "./gateways/mock-speech-transcriber.js";
 import type { SpeechTranscriber } from "./gateways/speech-transcriber.js";
+import type { WhatsAppGateway } from "./gateways/whatsapp.js";
 import { ConversationStore } from "./infrastructure/database.js";
 import { ManualRepository } from "./knowledge/manual-repository.js";
+import { registerWhatsAppRoutes } from "./whatsapp/whatsapp-webhook.js";
 
 const testMessageSchema = z.object({
   externalMessageId: z.string().min(1).max(200),
@@ -24,6 +30,7 @@ export interface AppDependencies {
   store?: ConversationStore;
   languageModel?: LanguageModelGateway;
   speechTranscriber?: SpeechTranscriber;
+  whatsAppGateway?: WhatsAppGateway;
 }
 
 export interface BuiltApp {
@@ -32,6 +39,7 @@ export interface BuiltApp {
   store: ConversationStore;
   assistant: SupportAssistant;
   speechTranscriber: SpeechTranscriber;
+  whatsAppGateway: WhatsAppGateway | undefined;
 }
 
 export async function buildApp(
@@ -58,8 +66,16 @@ export async function buildApp(
       ? new (await import("./gateways/azure-speech-transcriber.js"))
           .AzureSpeechTranscriber(config)
       : new MockSpeechTranscriber());
+  const whatsAppGateway =
+    dependencies.whatsAppGateway ??
+    (config.WHATSAPP_ENABLED
+      ? new (await import("./gateways/meta-whatsapp.js")).MetaWhatsAppGateway(
+          config,
+        )
+      : undefined);
 
   const app = Fastify({
+    logController: new LogController({ disableRequestLogging: true }),
     logger:
       config.NODE_ENV === "test"
         ? false
@@ -67,6 +83,7 @@ export async function buildApp(
             redact: {
               paths: [
                 "req.headers.authorization",
+                "req.headers.x-hub-signature-256",
                 "req.headers.x-test-token",
                 "body.externalUserId",
               ],
@@ -75,6 +92,26 @@ export async function buildApp(
           },
     bodyLimit: config.MAX_AUDIO_BYTES,
   });
+  const rawJsonBodies = new WeakMap<FastifyRequest, Buffer>();
+  app.removeContentTypeParser("application/json");
+  app.addContentTypeParser(
+    "application/json",
+    { parseAs: "buffer", bodyLimit: config.MAX_AUDIO_BYTES },
+    (request, body, done) => {
+      const rawBody = body as Buffer;
+      rawJsonBodies.set(request, rawBody);
+      try {
+        done(null, JSON.parse(rawBody.toString("utf8")) as unknown);
+      } catch {
+        done(
+          Object.assign(new Error("Invalid JSON request body"), {
+            statusCode: 400,
+          }),
+          undefined,
+        );
+      }
+    },
+  );
   await app.register(multipart);
 
   app.get("/health", async () => ({ status: "ok" }));
@@ -85,6 +122,8 @@ export async function buildApp(
       manualChunks: manual.size,
       manualVersion: manual.version,
       llmProvider: config.LLM_PROVIDER,
+      speechProvider: config.SPEECH_PROVIDER,
+      whatsAppEnabled: config.WHATSAPP_ENABLED,
     });
   });
 
@@ -182,11 +221,29 @@ export async function buildApp(
     });
   }
 
+  if (config.WHATSAPP_ENABLED && whatsAppGateway) {
+    registerWhatsAppRoutes(app, {
+      config,
+      assistant,
+      store,
+      speechTranscriber,
+      gateway: whatsAppGateway,
+      rawBodyFor: (request) => rawJsonBodies.get(request),
+    });
+  }
+
   app.addHook("onClose", async () => {
     if (!dependencies.store) {
       store.close();
     }
   });
 
-  return { app, manual, store, assistant, speechTranscriber };
+  return {
+    app,
+    manual,
+    store,
+    assistant,
+    speechTranscriber,
+    whatsAppGateway,
+  };
 }

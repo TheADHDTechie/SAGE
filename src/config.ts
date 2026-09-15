@@ -1,10 +1,11 @@
 import path from "node:path";
 import { z } from "zod";
 
-const booleanFromString = z
-  .enum(["true", "false"])
-  .default("false")
-  .transform((value) => value === "true");
+const booleanFromString = (defaultValue: "true" | "false") =>
+  z
+    .enum(["true", "false"])
+    .default(defaultValue)
+    .transform((value) => value === "true");
 
 const optionalUrl = z
   .string()
@@ -47,6 +48,21 @@ const environmentSchema = z
       .transform((value) => value === "true"),
     TEST_API_TOKEN: optionalString,
     MAX_AUDIO_BYTES: z.coerce.number().int().min(1024).default(16 * 1024 * 1024),
+    WHATSAPP_ENABLED: booleanFromString("false"),
+    WHATSAPP_VERIFY_TOKEN: optionalString,
+    META_APP_SECRET: optionalString,
+    WHATSAPP_ACCESS_TOKEN: optionalString,
+    WHATSAPP_PHONE_NUMBER_ID: optionalString,
+    WHATSAPP_GRAPH_API_VERSION: z
+      .string()
+      .regex(/^v\d+\.\d+$/)
+      .default("v26.0"),
+    WHATSAPP_GRAPH_BASE_URL: z
+      .url()
+      .default("https://graph.facebook.com"),
+    WHATSAPP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(15000),
+    WHATSAPP_MARK_MESSAGES_READ: booleanFromString("true"),
+    STAFF_API_TOKEN: optionalString,
   })
   .superRefine((value, context) => {
     if (
@@ -84,6 +100,39 @@ const environmentSchema = z
         path: ["ENABLE_TEST_ENDPOINTS"],
         message: "Test endpoints cannot be enabled in production",
       });
+    }
+
+    if (value.WHATSAPP_ENABLED) {
+      const requiredValues = [
+        ["WHATSAPP_VERIFY_TOKEN", value.WHATSAPP_VERIFY_TOKEN],
+        ["META_APP_SECRET", value.META_APP_SECRET],
+        ["WHATSAPP_ACCESS_TOKEN", value.WHATSAPP_ACCESS_TOKEN],
+        ["WHATSAPP_PHONE_NUMBER_ID", value.WHATSAPP_PHONE_NUMBER_ID],
+        ["STAFF_API_TOKEN", value.STAFF_API_TOKEN],
+      ] as const;
+
+      for (const [path, configuredValue] of requiredValues) {
+        if (!configuredValue) {
+          context.addIssue({
+            code: "custom",
+            path: [path],
+            message: `Required when WHATSAPP_ENABLED=true`,
+          });
+        }
+      }
+
+      for (const [path, configuredValue] of [
+        ["WHATSAPP_VERIFY_TOKEN", value.WHATSAPP_VERIFY_TOKEN],
+        ["STAFF_API_TOKEN", value.STAFF_API_TOKEN],
+      ] as const) {
+        if (configuredValue && configuredValue.length < 16) {
+          context.addIssue({
+            code: "custom",
+            path: [path],
+            message: "Must contain at least 16 characters",
+          });
+        }
+      }
     }
   });
 

@@ -21,7 +21,7 @@ This development machine already has Node.js, npm, and FFmpeg available.
 Open PowerShell:
 
 ```powershell
-Set-Location C:\Users\nouromar\source\repos\hackathon\SAL
+Set-Location C:\Users\nouromar\source\repos\hackathon\SAGE
 Copy-Item .env.example .env
 notepad .env
 ```
@@ -58,7 +58,7 @@ npm run eval:synthetic
 
 Expected results:
 
-- 13 automated tests pass.
+- 44 automated tests pass.
 - 150 generated message scenarios pass in mock mode.
 - Evaluation reports are written to `reports\`.
 
@@ -303,7 +303,104 @@ With a 150,000 tokens-per-minute deployment and the full manual in each request,
 the default seven-second delay between evaluation cases. Interactive Postman testing
 does not require additional pacing.
 
-## 4. Configure Azure Speech
+## 4. Configure the local WhatsApp callback
+
+### Enable WhatsApp
+
+Create random values for the callback verification token and staff API token. Add
+the Meta app and phone configuration to `.env`:
+
+```env
+WHATSAPP_ENABLED=true
+WHATSAPP_VERIFY_TOKEN=<random-value-you-create>
+META_APP_SECRET=<Meta-App-Secret>
+WHATSAPP_ACCESS_TOKEN=<Meta-access-token>
+WHATSAPP_PHONE_NUMBER_ID=<WhatsApp-phone-number-id>
+WHATSAPP_GRAPH_API_VERSION=v26.0
+WHATSAPP_GRAPH_BASE_URL=https://graph.facebook.com
+WHATSAPP_TIMEOUT_MS=15000
+WHATSAPP_MARK_MESSAGES_READ=true
+STAFF_API_TOKEN=<another-random-value>
+```
+
+`WHATSAPP_VERIFY_TOKEN` is a value you create and enter in both `.env` and the Meta
+callback form. It is not the access token.
+
+For real voice notes, also configure:
+
+```env
+SPEECH_PROVIDER=azure
+AZURE_SPEECH_ENDPOINT=<Azure-Speech-endpoint>
+AZURE_SPEECH_KEY=<optional-key>
+```
+
+When `SPEECH_PROVIDER=mock`, real WhatsApp audio cannot be transcribed and the user
+receives a request to resend or type the question.
+
+### Expose the service through HTTPS
+
+Start SAGE:
+
+```powershell
+npm start
+```
+
+Install and authenticate ngrok in another PowerShell window:
+
+```powershell
+winget install ngrok -s msstore
+ngrok config add-authtoken "<ngrok-auth-token>"
+ngrok http 3000
+```
+
+Copy the public HTTPS URL and append:
+
+```text
+/webhooks/whatsapp
+```
+
+For example:
+
+```text
+https://<generated-host>.ngrok.app/webhooks/whatsapp
+```
+
+### Register the callback in Meta
+
+In the Meta Developer dashboard:
+
+1. Open the application and its WhatsApp configuration.
+2. Edit the webhook callback.
+3. Enter the public callback URL.
+4. Enter the exact `WHATSAPP_VERIFY_TOKEN` value.
+5. Verify and save the callback.
+6. Subscribe to the `messages` webhook field.
+
+Keep ngrok and SAGE running while testing. If the public tunnel URL changes, update
+the callback URL in Meta.
+
+### Return a conversation to the chatbot
+
+The staff endpoint closes the active human-handoff conversation. The next message
+from that WhatsApp user starts a fresh chatbot conversation:
+
+```powershell
+$headers = @{
+  Authorization = "Bearer <STAFF_API_TOKEN>"
+}
+$body = @{
+  externalUserId = "254700000001"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+  -Method Post `
+  -Uri http://127.0.0.1:3000/api/staff/conversations/reset `
+  -Headers $headers `
+  -ContentType application/json `
+  -Body $body
+```
+
+## 5. Configure Azure Speech
 
 Voice support is optional for the first text demo and can be enabled separately.
 
@@ -382,7 +479,7 @@ The response should contain:
 }
 ```
 
-## 5. Configure cost and quota controls
+## 6. Configure cost and quota controls
 
 For the prototype resource group:
 
@@ -393,7 +490,7 @@ For the prototype resource group:
 5. Start with low capacity and increase it only after observing throttling.
 6. Review cost after the first live 150-case evaluation.
 
-## 6. Common problems
+## 7. Common problems
 
 ### Service will not start
 
@@ -438,7 +535,7 @@ Owner or Contributor permissions alone do not necessarily grant inference access
 - Verify the file content type in Postman.
 - Try a short, clear recording first.
 
-## 7. Azure values engineering needs
+## 8. Azure values engineering needs
 
 Provide these non-secret values:
 
@@ -454,7 +551,7 @@ Grant the developer or hosted managed identity the required roles instead of sha
 keys where possible. If temporary keys are used, place them directly in the approved
 secret store or local `.env`.
 
-## 8. Microsoft documentation
+## 9. Microsoft documentation
 
 - [Set up Microsoft Foundry resources](https://learn.microsoft.com/en-us/azure/foundry/tutorials/quickstart-create-foundry-resources)
 - [Deploy Microsoft Foundry Models](https://learn.microsoft.com/en-us/azure/foundry/foundry-models/how-to/deploy-foundry-models)

@@ -14,6 +14,14 @@ interface ConversationRow {
   status: ConversationStatus;
 }
 
+export interface WhatsAppDelivery {
+  inboundMessageId: string;
+  responseText: string | null;
+  status: "processing" | "pending" | "sending" | "sent" | "failed";
+  attempts: number;
+  allowDuringHandoff: boolean;
+}
+
 export class ConversationStore {
   private readonly database: Database.Database;
 
@@ -227,6 +235,177 @@ export class ConversationStore {
     })();
   }
 
+  isHumanActiveForUser(externalUserId: string) {
+    const contactId = this.hashContact(externalUserId);
+    const row = this.database
+      .prepare(
+        `SELECT 1 AS active
+         FROM conversations
+         WHERE contact_id = ? AND status IN ('waiting_for_human', 'human')
+         LIMIT 1`,
+      )
+      .get(contactId);
+    return row !== undefined;
+  }
+
+  beginWhatsAppProcessing(inboundMessageId: string) {
+    const currentTime = new Date();
+    const now = currentTime.toISOString();
+    const staleBefore = new Date(
+      currentTime.getTime() - 2 * 60 * 1000,
+    ).toISOString();
+    return this.database.transaction(() => {
+      const inserted = this.database
+        .prepare(
+          `INSERT OR IGNORE INTO whatsapp_deliveries (
+             inbound_message_id, response_text, status, attempts, created_at, updated_at
+           ) VALUES (?, NULL, 'processing', 0, ?, ?)`,
+        )
+        .run(inboundMessageId, now, now);
+      if (inserted.changes === 1) {
+        return "new" as const;
+      }
+
+      const reclaimed = this.database
+        .prepare(
+          `UPDATE whatsapp_deliveries
+           SET status = 'processing', updated_at = ?
+           WHERE inbound_message_id = ?
+             AND response_text IS NULL
+             AND (
+               status = 'failed'
+               OR (status = 'processing' AND updated_at < ?)
+             )`,
+        )
+        .run(now, inboundMessageId, staleBefore);
+      return reclaimed.changes === 1 ? ("reclaimed" as const) : undefined;
+    })();
+  }
+
+  prepareWhatsAppDelivery(
+    inboundMessageId: string,
+    responseText: string,
+    allowDuringHandoff = false,
+  ) {
+    const now = new Date().toISOString();
+    this.database
+      .prepare(
+        `INSERT INTO whatsapp_deliveries (
+           inbound_message_id, response_text, status, attempts,
+           allow_during_handoff, created_at, updated_at
+         ) VALUES (?, ?, 'pending', 0, ?, ?, ?)
+         ON CONFLICT(inbound_message_id) DO UPDATE SET
+           response_text = excluded.response_text,
+           allow_during_handoff = excluded.allow_during_handoff,
+           status = CASE
+             WHEN whatsapp_deliveries.status = 'sent' THEN 'sent'
+             ELSE 'pending'
+           END,
+           updated_at = excluded.updated_at`,
+      )
+      .run(inboundMessageId, responseText, allowDuringHandoff ? 1 : 0, now, now);
+  }
+
+  whatsAppDelivery(inboundMessageId: string): WhatsAppDelivery | undefined {
+    const delivery = this.database
+      .prepare(
+        `SELECT inbound_message_id AS inboundMessageId,
+                response_text AS responseText,
+                status,
+                attempts,
+                allow_during_handoff AS allowDuringHandoff
+         FROM whatsapp_deliveries
+         WHERE inbound_message_id = ?`,
+      )
+      .get(inboundMessageId) as
+      | (Omit<WhatsAppDelivery, "allowDuringHandoff"> & {
+          allowDuringHandoff: number;
+        })
+      | undefined;
+    return delivery
+      ? {
+          ...delivery,
+          allowDuringHandoff: Boolean(delivery.allowDuringHandoff),
+        }
+      : undefined;
+  }
+
+  claimWhatsAppDelivery(inboundMessageId: string) {
+    const now = new Date();
+    const staleBefore = new Date(now.getTime() - 2 * 60 * 1000).toISOString();
+    const result = this.database
+      .prepare(
+        `UPDATE whatsapp_deliveries
+         SET status = 'sending', attempts = attempts + 1, updated_at = ?
+         WHERE inbound_message_id = ?
+           AND response_text IS NOT NULL
+           AND (
+             status IN ('pending', 'failed')
+             OR (status = 'sending' AND updated_at < ?)
+           )`,
+      )
+      .run(now.toISOString(), inboundMessageId, staleBefore);
+    return result.changes === 1;
+  }
+
+  markWhatsAppDeliverySent(
+    inboundMessageId: string,
+    outboundMessageIds: readonly string[],
+  ) {
+    this.database
+      .prepare(
+        `UPDATE whatsapp_deliveries
+         SET status = 'sent',
+             outbound_message_ids_json = ?,
+             last_error = NULL,
+             updated_at = ?
+         WHERE inbound_message_id = ?`,
+      )
+      .run(
+        JSON.stringify(outboundMessageIds),
+        new Date().toISOString(),
+        inboundMessageId,
+      );
+  }
+
+  markWhatsAppProcessingFailed(inboundMessageId: string, error: string) {
+    this.database
+      .prepare(
+        `UPDATE whatsapp_deliveries
+         SET status = 'failed',
+             last_error = ?,
+             updated_at = ?
+         WHERE inbound_message_id = ?
+           AND response_text IS NULL`,
+      )
+      .run(error.slice(0, 1000), new Date().toISOString(), inboundMessageId);
+  }
+
+  completeWhatsAppWithoutResponse(inboundMessageId: string) {
+    this.database
+      .prepare(
+        `UPDATE whatsapp_deliveries
+         SET status = 'sent',
+             outbound_message_ids_json = '[]',
+             last_error = NULL,
+             updated_at = ?
+         WHERE inbound_message_id = ?`,
+      )
+      .run(new Date().toISOString(), inboundMessageId);
+  }
+
+  markWhatsAppDeliveryFailed(inboundMessageId: string, error: string) {
+    this.database
+      .prepare(
+        `UPDATE whatsapp_deliveries
+         SET status = 'failed',
+             last_error = ?,
+             updated_at = ?
+         WHERE inbound_message_id = ?`,
+      )
+      .run(error.slice(0, 1000), new Date().toISOString(), inboundMessageId);
+  }
+
   private hashContact(externalUserId: string) {
     return createHmac("sha256", this.contactHashKey)
       .update(externalUserId)
@@ -285,6 +464,20 @@ export class ConversationStore {
         details_json TEXT,
         created_at TEXT NOT NULL,
         FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS whatsapp_deliveries (
+        inbound_message_id TEXT PRIMARY KEY,
+        response_text TEXT,
+        status TEXT NOT NULL CHECK (
+          status IN ('processing', 'pending', 'sending', 'sent', 'failed')
+        ),
+        attempts INTEGER NOT NULL DEFAULT 0,
+        allow_during_handoff INTEGER NOT NULL DEFAULT 0,
+        outbound_message_ids_json TEXT,
+        last_error TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
       );
 
       CREATE INDEX IF NOT EXISTS idx_conversations_contact

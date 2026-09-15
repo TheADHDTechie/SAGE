@@ -25,9 +25,12 @@ export class SupportAssistant {
     private readonly languageModel: LanguageModelGateway,
   ) {}
 
-  async process(message: SupportMessage): Promise<SupportResponse> {
+  async process(
+    message: SupportMessage,
+    options: { allowDuplicate?: boolean } = {},
+  ): Promise<SupportResponse> {
     const inbound = this.store.beginInbound(message);
-    if (inbound.duplicate) {
+    if (inbound.duplicate && !options.allowDuplicate) {
       return {
         status: "duplicate",
         conversationId: inbound.conversationId,

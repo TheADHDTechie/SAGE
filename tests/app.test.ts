@@ -45,7 +45,21 @@ describe("HTTP API", () => {
       status: "ready",
       manualChunks: 58,
       llmProvider: "mock",
+      speechProvider: "mock",
+      whatsAppEnabled: false,
     });
+  });
+
+  it("does not expose WhatsApp routes when the integration is disabled", async () => {
+    const { app } = await buildApp(testConfig());
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/webhooks/whatsapp",
+    });
+    await app.close();
+
+    expect(response.statusCode).toBe(404);
   });
 
   it("protects test endpoints", async () => {

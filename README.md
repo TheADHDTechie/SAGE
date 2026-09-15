@@ -80,6 +80,49 @@ AZURE_SPEECH_MODEL=MAI-Transcribe-2
 See [`LOCAL-AZURE-SETUP.md`](LOCAL-AZURE-SETUP.md) for the detailed setup and
 Postman instructions.
 
+## WhatsApp Cloud API
+
+The service provides:
+
+```text
+GET  /webhooks/whatsapp
+POST /webhooks/whatsapp
+POST /api/staff/conversations/reset
+```
+
+Enable the integration in `.env`:
+
+```env
+WHATSAPP_ENABLED=true
+WHATSAPP_VERIFY_TOKEN=<random-callback-verification-token>
+META_APP_SECRET=<meta-app-secret>
+WHATSAPP_ACCESS_TOKEN=<system-user-or-temporary-access-token>
+WHATSAPP_PHONE_NUMBER_ID=<phone-number-id>
+STAFF_API_TOKEN=<random-staff-api-token>
+```
+
+Expose local port 3000 through an HTTPS tunnel and register this callback URL in
+the Meta app:
+
+```text
+https://<public-host>/webhooks/whatsapp
+```
+
+Subscribe the WhatsApp Business Account to the `messages` field. Signed text,
+audio, and delivery-status callbacks are handled. Audio media is downloaded from
+Meta, checked for size and checksum, and passed to the configured speech provider.
+Generated answers are sent through the Graph API with citations.
+
+To return a handed-off user to chatbot control:
+
+```powershell
+$headers = @{ Authorization = "Bearer <STAFF_API_TOKEN>" }
+$body = @{ externalUserId = "<WhatsApp-number>" } | ConvertTo-Json
+Invoke-RestMethod -Method Post `
+  -Uri http://127.0.0.1:3000/api/staff/conversations/reset `
+  -Headers $headers -ContentType application/json -Body $body
+```
+
 ## Validation
 
 ```powershell
