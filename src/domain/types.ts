@@ -20,14 +20,21 @@ export interface ChatMessage {
   createdAt: string;
 }
 
-export interface SupportModelResult {
+interface SupportModelResultBase {
   language: SupportedLanguage;
-  answer: string;
-  supported: boolean;
-  citedChunkIds: string[];
-  requiresHuman: boolean;
-  handoffReason?: string;
+  response: string;
+  reason: string | null;
 }
+
+export type SupportModelResult =
+  | (SupportModelResultBase & {
+      intent: "greeting" | "closing" | "clarify_scope" | "request_human";
+      citedChunkIds: [];
+    })
+  | (SupportModelResultBase & {
+      intent: "guide_answer";
+      citedChunkIds: string[];
+    });
 
 export interface Citation {
   chunkId: string;

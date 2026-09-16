@@ -101,11 +101,14 @@ const topics: TopicDefinition[] = [
 
 export function topicShortcutMessage(
   language: TopicMenuLanguage,
+  body?: string,
 ): WhatsAppButtonMessage {
   const prefix = `topic:${language}:`;
   if (language === "sw") {
     return {
-      body: "Habari! Mimi ni SAGE. Unaweza kuandika swali lolote au kutuma ujumbe wa sauti kuhusu maktaba ya shule. Pia unaweza kutumia njia hizi za mkato.",
+      body:
+        body ??
+        "Habari! Mimi ni SAGE. Unaweza kuandika swali lolote au kutuma ujumbe wa sauti kuhusu maktaba ya shule. Pia unaweza kutumia njia hizi za mkato.",
       buttons: [
         { id: `${prefix}arrange-books`, title: "Panga vitabu" },
         { id: `${prefix}start-library`, title: "Anzisha maktaba" },
@@ -114,7 +117,9 @@ export function topicShortcutMessage(
     };
   }
   return {
-    body: "Hello! I'm SAGE. You can type any question or send a voice note about your school library. You can also use these optional shortcuts.",
+    body:
+      body ??
+      "Hello! I'm SAGE. You can type any question or send a voice note about your school library. You can also use these optional shortcuts.",
     buttons: [
       { id: `${prefix}arrange-books`, title: "Arrange books" },
       { id: `${prefix}start-library`, title: "Start a library" },

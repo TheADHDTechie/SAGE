@@ -3,13 +3,13 @@ import type {
   SupportResponse,
   SupportedLanguage,
 } from "../domain/types.js";
-import type { LanguageModelGateway } from "../gateways/language-model.js";
+import {
+  type LanguageModelGateway,
+  parseSupportModelResult,
+} from "../gateways/language-model.js";
 import type { ConversationStore } from "../infrastructure/database.js";
 import type { ManualRepository } from "../knowledge/manual-repository.js";
-import {
-  isFullClosingResponse,
-  routeByPolicy,
-} from "../policy/policy-router.js";
+import { routeByPolicy } from "../policy/policy-router.js";
 
 const humanActiveResponses: Record<"en" | "sw", string> = {
   en: "A SAL staff member is handling this conversation and can reply here.",
@@ -113,52 +113,19 @@ export class SupportAssistant {
       };
     }
 
-    if (policy.action === "respond") {
-      const response =
-        policy.socialIntent === "closing" &&
-        policy.closingStyle === "farewell" &&
-        policy.briefResponse &&
-        this.previousAssistantMessageWasClosing(inbound.conversationId)
-          ? policy.briefResponse
-          : policy.response;
-      this.store.clearClarification(inbound.conversationId);
-      this.store.recordAssistantMessage({
-        conversationId: inbound.conversationId,
-        content: response,
-        language: policy.language,
-      });
-      return {
-        status: "answered",
-        conversationId: inbound.conversationId,
-        language: policy.language,
-        answer: response,
-        citations: [],
-        ...(policy.socialIntent === "greeting"
-          ? { presentation: "topic_shortcuts" as const }
-          : {}),
-      };
-    }
-
-    if (policy.action === "clarify") {
-      return this.clarify(
-        inbound.conversationId,
-        policy.language,
-        policy.reason,
-      );
-    }
-
     if (policy.action === "handoff") {
       return this.handoff(
         inbound.conversationId,
         policy.language,
         policy.reason,
         policy.response,
+        message.externalMessageId,
       );
     }
 
-    let result;
+    let modelOutput;
     try {
-      result = await this.languageModel.answerSupportQuestion({
+      modelOutput = await this.languageModel.generateSupportResponse({
         question: message.text,
         languageHint: policy.language,
         recentMessages: this.store.recentMessages(inbound.conversationId),
@@ -181,20 +148,79 @@ export class SupportAssistant {
       );
     }
 
-    const citationsValid = result.citedChunkIds.every((id) =>
-      this.manual.hasChunk(id),
-    );
+    let result;
+    try {
+      result = parseSupportModelResult(modelOutput);
+    } catch (error) {
+      this.store.recordAuditEvent({
+        conversationId: inbound.conversationId,
+        eventType: "language_model_validation_failure",
+        details: {
+          deployment: this.languageModel.deploymentName,
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+      });
+      return this.clarify(
+        inbound.conversationId,
+        policy.language,
+        "invalid_model_intent",
+      );
+    }
 
-    if (
-      !result.supported ||
-      result.requiresHuman ||
-      result.citedChunkIds.length === 0 ||
-      !citationsValid
-    ) {
+    if (result.intent === "greeting") {
+      return this.answerWithoutCitations(
+        inbound.conversationId,
+        result.language,
+        result.response,
+        "topic_shortcuts",
+      );
+    }
+
+    if (result.intent === "closing") {
+      return this.answerWithoutCitations(
+        inbound.conversationId,
+        result.language,
+        result.response,
+      );
+    }
+
+    if (result.intent === "clarify_scope") {
+      return this.clarifyWithResponse(
+        inbound.conversationId,
+        result.language,
+        result.reason ?? "manual_content_insufficient",
+        result.response,
+      );
+    }
+
+    if (result.intent === "request_human") {
+      return this.handoff(
+        inbound.conversationId,
+        result.language,
+        result.reason ?? "user_requested_human",
+        result.response,
+        message.externalMessageId,
+      );
+    }
+
+    const citationsValid =
+      result.citedChunkIds.length > 0 &&
+      result.citedChunkIds.every((id) => this.manual.hasChunk(id));
+    if (!citationsValid) {
+      this.store.recordAuditEvent({
+        conversationId: inbound.conversationId,
+        eventType: "language_model_validation_failure",
+        details: {
+          deployment: this.languageModel.deploymentName,
+          intent: result.intent,
+          reason: "invalid_or_missing_citations",
+          citedChunkIds: result.citedChunkIds,
+        },
+      });
       return this.clarify(
         inbound.conversationId,
         result.language,
-        result.handoffReason ?? "manual_content_insufficient",
+        "invalid_or_missing_citations",
       );
     }
 
@@ -202,7 +228,7 @@ export class SupportAssistant {
     this.store.clearClarification(inbound.conversationId);
     this.store.recordAssistantMessage({
       conversationId: inbound.conversationId,
-      content: result.answer,
+      content: result.response,
       language: result.language,
       citations: result.citedChunkIds,
       modelDeployment: this.languageModel.deploymentName,
@@ -212,8 +238,30 @@ export class SupportAssistant {
       status: "answered",
       conversationId: inbound.conversationId,
       language: result.language,
-      answer: result.answer,
+      answer: result.response,
       citations,
+    };
+  }
+
+  private answerWithoutCitations(
+    conversationId: string,
+    language: SupportedLanguage,
+    response: string,
+    presentation?: "topic_shortcuts",
+  ): SupportResponse {
+    this.store.clearClarification(conversationId);
+    this.store.recordAssistantMessage({
+      conversationId,
+      content: response,
+      language,
+    });
+    return {
+      status: "answered",
+      conversationId,
+      language,
+      answer: response,
+      citations: [],
+      ...(presentation ? { presentation } : {}),
     };
   }
 
@@ -246,18 +294,42 @@ export class SupportAssistant {
     };
   }
 
-  private handoff(
+  private clarifyWithResponse(
     conversationId: string,
     language: SupportedLanguage,
     reason: string,
     response: string,
   ): SupportResponse {
-    const handoffResponse = `${response}\n\n${handoffReturnInstructions[baseLanguage(language)]}`;
-    this.store.createHandoff(conversationId, reason);
+    this.store.recordClarification(conversationId, reason);
     this.store.recordAssistantMessage({
       conversationId,
+      content: response,
+      language,
+    });
+    return {
+      status: "answered",
+      conversationId,
+      language,
+      answer: response,
+      citations: [],
+      presentation: "staff_options",
+    };
+  }
+
+  private handoff(
+    conversationId: string,
+    language: SupportedLanguage,
+    reason: string,
+    response: string,
+    inReplyToExternalMessageId: string,
+  ): SupportResponse {
+    const handoffResponse = /\bBOT\b/i.test(response)
+      ? response
+      : `${response}\n\n${handoffReturnInstructions[baseLanguage(language)]}`;
+    this.store.createHandoff(conversationId, reason, {
       content: handoffResponse,
       language,
+      inReplyToExternalMessageId,
     });
     return {
       status: "handoff",
@@ -268,16 +340,6 @@ export class SupportAssistant {
     };
   }
 
-  private previousAssistantMessageWasClosing(conversationId: string) {
-    const recentMessages = this.store.recentMessages(conversationId);
-    const previousMessage = recentMessages.findLast(
-      (message) => message.senderType === "assistant",
-    );
-    return (
-      previousMessage !== undefined &&
-      isFullClosingResponse(previousMessage.content)
-    );
-  }
 }
 
 function baseLanguage(language: SupportedLanguage): "en" | "sw" {

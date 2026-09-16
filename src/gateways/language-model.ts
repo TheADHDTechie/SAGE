@@ -6,13 +6,43 @@ import type {
 } from "../domain/types.js";
 
 export const supportModelResultSchema = z.object({
+  intent: z.enum([
+    "greeting",
+    "closing",
+    "guide_answer",
+    "clarify_scope",
+    "request_human",
+  ]),
   language: z.enum(["en", "sw", "mixed", "unknown"]),
-  answer: z.string().min(1).max(4000),
-  supported: z.boolean(),
+  response: z.string().min(1).max(4000),
   citedChunkIds: z.array(z.string()).max(12),
-  requiresHuman: z.boolean(),
-  handoffReason: z.string().optional(),
+  reason: z.string().nullable(),
 });
+
+export type SupportModelResultInput = z.infer<
+  typeof supportModelResultSchema
+>;
+
+export function parseSupportModelResult(input: unknown): SupportModelResult {
+  const result = supportModelResultSchema.parse(input);
+  if (result.intent === "guide_answer") {
+    if (result.citedChunkIds.length === 0) {
+      throw new Error("A guide answer requires at least one citation");
+    }
+    return {
+      ...result,
+      intent: "guide_answer",
+    };
+  }
+  if (result.citedChunkIds.length !== 0) {
+    throw new Error("Only guide answers may include citations");
+  }
+  return {
+    ...result,
+    intent: result.intent,
+    citedChunkIds: [],
+  };
+}
 
 export interface LanguageModelInput {
   question: string;
@@ -23,5 +53,7 @@ export interface LanguageModelInput {
 
 export interface LanguageModelGateway {
   readonly deploymentName: string;
-  answerSupportQuestion(input: LanguageModelInput): Promise<SupportModelResult>;
+  generateSupportResponse(
+    input: LanguageModelInput,
+  ): Promise<SupportModelResultInput>;
 }

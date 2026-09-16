@@ -6,19 +6,23 @@ describe("policy routing", () => {
     expect(detectLanguage("Ninawezaje kupanga vitabu katika maktaba?")).toBe("sw");
   });
 
-  it("routes an explicit human request", () => {
-    const decision = routeByPolicy("I want to speak with a staff member");
-
-    expect(decision.action).toBe("handoff");
-    if (decision.action === "handoff") {
-      expect(decision.reason).toBe("user_requested_human");
-    }
+  it("sends a natural human request to the unified model router", () => {
+    expect(
+      routeByPolicy("I want to speak with a staff member").action,
+    ).toBe("continue");
   });
 
-  it.each(["STAFF", "HUMAN", "I need a human", "MFANYAKAZI"])(
+  it.each(["STAFF", "HUMAN", "AGENT", "MFANYAKAZI", "MHUDUMU"])(
     "routes the explicit staff command %s",
     (message) => {
       expect(routeByPolicy(message).action).toBe("handoff");
+    },
+  );
+
+  it.each(["PERSON", "REPRESENTATIVE"])(
+    "sends the non-command human term %s to the unified model router",
+    (message) => {
+      expect(routeByPolicy(message).action).toBe("continue");
     },
   );
 
@@ -38,29 +42,10 @@ describe("policy routing", () => {
     ["Jambo", "sw"],
     ["Habari mwalimu", "sw"],
     ["Asante sana", "sw"],
-  ] as const)("responds directly to the social message %s", (message, language) => {
-    const decision = routeByPolicy(message);
-
-    expect(decision.action).toBe("respond");
-    expect(decision.language).toBe(language);
-  });
-
-  it.each([
-    ["Thank you for your help", "en", "gratitude"],
-    ["Bye for now", "en", "farewell"],
-    ["Asante kwa msaada", "sw", "gratitude"],
-    ["Kwaheri", "sw", "farewell"],
   ] as const)(
-    "recognizes the closing message %s",
-    (message, language, closingStyle) => {
-      const decision = routeByPolicy(message);
-
-      expect(decision.action).toBe("respond");
-      if (decision.action === "respond") {
-        expect(decision.socialIntent).toBe("closing");
-        expect(decision.closingStyle).toBe(closingStyle);
-        expect(decision.language).toBe(language);
-      }
+    "sends the social message %s to the unified model router",
+    (message, _language) => {
+      expect(routeByPolicy(message).action).toBe("continue");
     },
   );
 
@@ -90,13 +75,10 @@ describe("policy routing", () => {
     ).toBe("continue");
   });
 
-  it("asks an unrelated user to clarify instead of handing off", () => {
-    const decision = routeByPolicy("What is the weather today?");
-
-    expect(decision.action).toBe("clarify");
-    if (decision.action === "clarify") {
-      expect(decision.reason).toBe("out_of_scope");
-    }
+  it("sends unrelated messages to the unified model router", () => {
+    expect(routeByPolicy("What is the weather today?").action).toBe(
+      "continue",
+    );
   });
 
   it("closes an opt-out conversation", () => {

@@ -373,6 +373,16 @@ async function processWhatsAppMessage(input: {
       existingDelivery.status !== "sent"
     ) {
       if (
+        existingDelivery.allowDuringHandoff &&
+        ((existingDelivery.conversationId &&
+          !store.isConversationHumanActive(existingDelivery.conversationId)) ||
+          (!existingDelivery.conversationId &&
+            !store.isHumanActiveForUser(message.from)))
+      ) {
+        store.completeWhatsAppWithoutResponse(message.id);
+        return;
+      }
+      if (
         store.isHumanActiveForUser(message.from) &&
         !existingDelivery.allowDuringHandoff
       ) {
@@ -390,6 +400,29 @@ async function processWhatsAppMessage(input: {
   }
 
   try {
+    if (processingState === "reclaimed") {
+      const handoffRecovery = store.handoffResponseForInbound(message.id);
+      if (handoffRecovery) {
+        if (!handoffRecovery.active) {
+          store.completeWhatsAppWithoutResponse(message.id);
+          return;
+        }
+        store.prepareWhatsAppDelivery(
+          message.id,
+          handoffRecovery.content,
+          true,
+          handoffRecovery.conversationId,
+        );
+        await sendPreparedDelivery(message.id, message.from, store, gateway);
+        return;
+      }
+      const originalInbound = store.inboundConversationForMessage(message.id);
+      if (originalInbound && originalInbound.status !== "bot") {
+        store.completeWhatsAppWithoutResponse(message.id);
+        return;
+      }
+    }
+
     if (markRead) {
       try {
         await gateway.markRead(message.id);
@@ -594,6 +627,7 @@ async function processWhatsAppMessage(input: {
       plan,
       assistantResponse.status === "handoff",
       responseText,
+      assistantResponse.conversationId,
     );
     await sendPreparedDelivery(message.id, message.from, store, gateway);
   } catch (error) {
@@ -694,7 +728,7 @@ async function sendDeliveryStep(
     try {
       return await gateway.sendButtons({
         to: recipient,
-        message: topicShortcutMessage(step.language),
+        message: topicShortcutMessage(step.language, step.body),
         replyToMessageId: inboundMessageId,
       });
     } catch (error) {
@@ -707,7 +741,9 @@ async function sendDeliveryStep(
       });
       return gateway.sendText({
         to: recipient,
-        body: topicMenuTextFallback(step.language),
+        body: step.body
+          ? `${step.body}\n\n${topicMenuTextFallback(step.language)}`
+          : topicMenuTextFallback(step.language),
         replyToMessageId: inboundMessageId,
       });
     }
@@ -792,6 +828,7 @@ async function createResponsePlan(input: {
         {
           kind: "topic_shortcuts",
           language: response.language === "sw" ? "sw" : "en",
+          body: response.answer,
         },
       ],
     };

@@ -20,6 +20,7 @@ interface ConversationRow {
 
 export interface WhatsAppDelivery {
   inboundMessageId: string;
+  conversationId: string | null;
   responseText: string | null;
   plan: WhatsAppDeliveryPlan | null;
   status: "processing" | "pending" | "sending" | "sent" | "failed";
@@ -176,7 +177,15 @@ export class ConversationStore {
       );
   }
 
-  createHandoff(conversationId: string, reason: string) {
+  createHandoff(
+    conversationId: string,
+    reason: string,
+    assistantMessage?: {
+      content: string;
+      language: SupportedLanguage;
+      inReplyToExternalMessageId: string;
+    },
+  ) {
     const now = new Date().toISOString();
     this.database.transaction(() => {
       this.database
@@ -196,7 +205,76 @@ export class ConversationStore {
            VALUES (?, ?, ?, 'waiting', ?)`,
         )
         .run(randomUUID(), conversationId, reason, now);
+      if (assistantMessage) {
+        this.database
+          .prepare(
+            `INSERT INTO messages (
+               id, conversation_id, in_reply_to_external_message_id, direction,
+               sender_type, input_type, language, content, created_at
+             ) VALUES (?, ?, ?, 'outbound', 'assistant', 'text', ?, ?, ?)`,
+          )
+          .run(
+            randomUUID(),
+            conversationId,
+            assistantMessage.inReplyToExternalMessageId,
+            assistantMessage.language,
+            assistantMessage.content,
+            now,
+          );
+      }
     })();
+  }
+
+  handoffResponseForInbound(inboundMessageId: string) {
+    const row = this.database
+      .prepare(
+        `SELECT messages.content,
+                messages.conversation_id AS conversationId,
+                conversations.status
+         FROM messages
+         JOIN conversations ON conversations.id = messages.conversation_id
+         WHERE messages.in_reply_to_external_message_id = ?
+           AND EXISTS (
+             SELECT 1
+             FROM handoffs
+             WHERE handoffs.conversation_id = messages.conversation_id
+           )
+         LIMIT 1`,
+      )
+      .get(inboundMessageId) as
+      | {
+          content: string;
+          conversationId: string;
+          status: ConversationStatus;
+        }
+      | undefined;
+    return row
+      ? {
+          content: row.content,
+          conversationId: row.conversationId,
+          active:
+            row.status === "waiting_for_human" || row.status === "human",
+        }
+      : undefined;
+  }
+
+  inboundConversationForMessage(externalMessageId: string) {
+    return this.database
+      .prepare(
+        `SELECT conversations.id AS conversationId,
+                conversations.status
+         FROM messages
+         JOIN conversations ON conversations.id = messages.conversation_id
+         WHERE messages.external_message_id = ?
+           AND messages.direction = 'inbound'
+         LIMIT 1`,
+      )
+      .get(externalMessageId) as
+      | {
+          conversationId: string;
+          status: ConversationStatus;
+        }
+      | undefined;
   }
 
   closeConversation(conversationId: string) {
@@ -417,12 +495,14 @@ export class ConversationStore {
     inboundMessageId: string,
     responseText: string,
     allowDuringHandoff = false,
+    conversationId: string | null = null,
   ) {
     this.prepareWhatsAppDeliveryPlan(
       inboundMessageId,
       { steps: [{ kind: "text", body: responseText }] },
       allowDuringHandoff,
       responseText,
+      conversationId,
     );
   }
 
@@ -431,15 +511,18 @@ export class ConversationStore {
     plan: WhatsAppDeliveryPlan,
     allowDuringHandoff = false,
     responseText: string | null = null,
+    conversationId: string | null = null,
   ) {
     const now = new Date().toISOString();
     this.database
       .prepare(
         `INSERT INTO whatsapp_deliveries (
-           inbound_message_id, response_text, delivery_plan_json, status, attempts,
-           allow_during_handoff, created_at, updated_at
-         ) VALUES (?, ?, ?, 'pending', 0, ?, ?, ?)
+           inbound_message_id, conversation_id, response_text,
+           delivery_plan_json, status, attempts, allow_during_handoff,
+           created_at, updated_at
+         ) VALUES (?, ?, ?, ?, 'pending', 0, ?, ?, ?)
          ON CONFLICT(inbound_message_id) DO UPDATE SET
+           conversation_id = excluded.conversation_id,
            response_text = excluded.response_text,
            delivery_plan_json = excluded.delivery_plan_json,
            allow_during_handoff = excluded.allow_during_handoff,
@@ -451,6 +534,7 @@ export class ConversationStore {
       )
       .run(
         inboundMessageId,
+        conversationId,
         responseText,
         JSON.stringify(plan),
         allowDuringHandoff ? 1 : 0,
@@ -463,6 +547,7 @@ export class ConversationStore {
     const delivery = this.database
       .prepare(
         `SELECT inbound_message_id AS inboundMessageId,
+                conversation_id AS conversationId,
                 response_text AS responseText,
                 delivery_plan_json AS planJson,
                 status,
@@ -488,6 +573,17 @@ export class ConversationStore {
           allowDuringHandoff: Boolean(delivery.allowDuringHandoff),
         }
       : undefined;
+  }
+
+  isConversationHumanActive(conversationId: string) {
+    const row = this.database
+      .prepare(
+        `SELECT 1 AS active
+         FROM conversations
+         WHERE id = ? AND status IN ('waiting_for_human', 'human')`,
+      )
+      .get(conversationId);
+    return row !== undefined;
   }
 
   saveWhatsAppDeliveryPlan(
@@ -705,6 +801,7 @@ export class ConversationStore {
         id TEXT PRIMARY KEY,
         conversation_id TEXT NOT NULL,
         external_message_id TEXT UNIQUE,
+        in_reply_to_external_message_id TEXT,
         direction TEXT NOT NULL CHECK (direction IN ('inbound', 'outbound')),
         sender_type TEXT NOT NULL CHECK (sender_type IN ('user', 'assistant', 'staff', 'system')),
         input_type TEXT NOT NULL CHECK (input_type IN ('text', 'voice')),
@@ -738,6 +835,7 @@ export class ConversationStore {
 
       CREATE TABLE IF NOT EXISTS whatsapp_deliveries (
         inbound_message_id TEXT PRIMARY KEY,
+        conversation_id TEXT,
         response_text TEXT,
         delivery_plan_json TEXT,
         status TEXT NOT NULL CHECK (
@@ -773,7 +871,23 @@ export class ConversationStore {
       "INTEGER NOT NULL DEFAULT 0",
     );
     this.ensureColumn("conversations", "clarification_started_at", "TEXT");
+    this.ensureColumn("messages", "in_reply_to_external_message_id", "TEXT");
+    this.ensureColumn("whatsapp_deliveries", "conversation_id", "TEXT");
     this.ensureColumn("whatsapp_deliveries", "delivery_plan_json", "TEXT");
+    this.database.exec(`
+      UPDATE whatsapp_deliveries
+      SET conversation_id = (
+        SELECT messages.conversation_id
+        FROM messages
+        WHERE messages.external_message_id =
+          whatsapp_deliveries.inbound_message_id
+        LIMIT 1
+      )
+      WHERE conversation_id IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_messages_in_reply_to
+        ON messages(in_reply_to_external_message_id);
+    `);
   }
 
   private ensureColumn(table: string, column: string, definition: string) {

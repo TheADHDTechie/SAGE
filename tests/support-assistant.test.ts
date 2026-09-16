@@ -82,25 +82,34 @@ describe("SupportAssistant", () => {
     expect(duplicate.status).toBe("duplicate");
   });
 
-  it("answers a greeting without calling the language model or creating a handoff", async () => {
-    class UnexpectedLanguageModelGateway implements LanguageModelGateway {
-      readonly deploymentName = "unexpected-call";
+  it("uses the model to classify and answer an introduction", async () => {
+    class GreetingLanguageModelGateway implements LanguageModelGateway {
+      readonly deploymentName = "greeting-model";
+      calls = 0;
 
-      async answerSupportQuestion(
-        _input: LanguageModelInput,
+      async generateSupportResponse(
+        input: LanguageModelInput,
       ): Promise<SupportModelResult> {
-        throw new Error("The language model must not be called for greetings");
+        this.calls += 1;
+        expect(input.question).toContain("My name is Nour Omar");
+        return {
+          intent: "greeting",
+          language: "en",
+          response:
+            "Hello Nour! I'm SAGE, the Start A Library support assistant.",
+          citedChunkIds: [],
+          reason: null,
+        };
       }
     }
 
-    const { assistant, store } = createContext(
-      new UnexpectedLanguageModelGateway(),
-    );
+    const model = new GreetingLanguageModelGateway();
+    const { assistant, store } = createContext(model);
     const result = await assistant.process({
       externalMessageId: "greeting-1",
       externalUserId: "greeting-user",
       type: "text",
-      text: "Habari mwalimu",
+      text: "Hello. My name is Nour Omar. Who are you?",
       receivedAt: new Date().toISOString(),
     });
     const diagnostics = store.whatsAppDiagnostics();
@@ -108,10 +117,12 @@ describe("SupportAssistant", () => {
 
     expect(result.status).toBe("answered");
     if (result.status === "answered") {
-      expect(result.language).toBe("sw");
+      expect(result.language).toBe("en");
+      expect(result.answer).toContain("Hello Nour");
       expect(result.citations).toEqual([]);
       expect(result.presentation).toBe("topic_shortcuts");
     }
+    expect(model.calls).toBe(1);
     expect(diagnostics.handoffs).toEqual({});
   });
 
@@ -185,7 +196,7 @@ describe("SupportAssistant", () => {
 
     expect(handoff.status).toBe("handoff");
     if (handoff.status === "handoff") {
-      expect(handoff.answer).toContain("Reply BOT");
+      expect(handoff.answer).toContain("BOT");
     }
     expect(followUp.status).toBe("human_active");
   });
@@ -252,13 +263,13 @@ describe("SupportAssistant", () => {
     class InvalidCitationGateway implements LanguageModelGateway {
       readonly deploymentName = "invalid-citation-test";
 
-      async answerSupportQuestion(_input: LanguageModelInput) {
+      async generateSupportResponse(_input: LanguageModelInput) {
         return {
+          intent: "guide_answer" as const,
           language: "en" as const,
-          answer: "Unsupported citation",
-          supported: true,
+          response: "Unsupported citation",
           citedChunkIds: ["missing-chunk"],
-          requiresHuman: false,
+          reason: null,
         };
       }
     }
@@ -284,10 +295,155 @@ describe("SupportAssistant", () => {
       expect(result.answer).toContain("rephrase");
     }
     expect(state).toMatchObject({
-      reason: "manual_content_insufficient",
+      reason: "invalid_or_missing_citations",
       attempts: 1,
     });
     expect(diagnostics.handoffs).toEqual({});
+  });
+
+  it("treats a contradictory model result as validation failure", async () => {
+    class ContradictoryGateway implements LanguageModelGateway {
+      readonly deploymentName = "contradictory-test";
+
+      async generateSupportResponse(_input: LanguageModelInput) {
+        return {
+          intent: "greeting" as const,
+          language: "en" as const,
+          response: "Hello!",
+          citedChunkIds: ["sal-6ad9f66d2582"],
+          reason: null,
+        };
+      }
+    }
+
+    const { assistant, store } = createContext(new ContradictoryGateway());
+    const result = await assistant.process({
+      externalMessageId: "contradictory-result",
+      externalUserId: "contradictory-user",
+      type: "text",
+      text: "Hello",
+      receivedAt: new Date().toISOString(),
+    });
+    const diagnostics = store.whatsAppDiagnostics();
+    store.close();
+
+    expect(result.status).toBe("answered");
+    if (result.status === "answered") {
+      expect(result.answer).toContain("rephrase");
+      expect(result.presentation).toBe("staff_options");
+    }
+    expect(diagnostics.auditEvents).toMatchObject({
+      language_model_validation_failure: 1,
+    });
+    expect(diagnostics.auditEvents).not.toHaveProperty(
+      "language_model_failure",
+    );
+  });
+
+  it("recognizes a human request that mentions library staff", async () => {
+    const { assistant, store } = createContext();
+    const result = await assistant.process({
+      externalMessageId: "human-library-staff",
+      externalUserId: "human-library-staff-user",
+      type: "text",
+      text: "I want to speak with library staff",
+      receivedAt: new Date().toISOString(),
+    });
+    store.close();
+
+    expect(result.status).toBe("handoff");
+  });
+
+  it("treats thanks mentioning the library as a closing", async () => {
+    const { assistant, store } = createContext();
+    const result = await assistant.process({
+      externalMessageId: "thanks-library",
+      externalUserId: "thanks-library-user",
+      type: "text",
+      text: "Thanks for helping with the library",
+      receivedAt: new Date().toISOString(),
+    });
+    store.close();
+
+    expect(result.status).toBe("answered");
+    if (result.status === "answered") {
+      expect(result.answer).toContain("glad I could help");
+      expect(result.citations).toEqual([]);
+    }
+  });
+
+  it("does not discard a guide question prefixed by a greeting", async () => {
+    const { assistant, store } = createContext();
+    const result = await assistant.process({
+      externalMessageId: "greeting-shelves-question",
+      externalUserId: "greeting-shelves-user",
+      type: "text",
+      text: "Hello, how should shelves be arranged?",
+      receivedAt: new Date().toISOString(),
+    });
+    store.close();
+
+    expect(result.status).toBe("answered");
+    if (result.status === "answered") {
+      expect(result.presentation).not.toBe("topic_shortcuts");
+    }
+  });
+
+  it("does not let an identity question mask a guide question", async () => {
+    const { assistant, store } = createContext();
+    const result = await assistant.process({
+      externalMessageId: "identity-and-guide-question",
+      externalUserId: "identity-and-guide-user",
+      type: "text",
+      text: "Who are you, and how should shelves be arranged?",
+      receivedAt: new Date().toISOString(),
+    });
+    store.close();
+
+    expect(result.status).toBe("answered");
+    if (result.status === "answered") {
+      expect(result.presentation).not.toBe("topic_shortcuts");
+      expect(result.citations.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("does not discard a guide question prefixed by thanks", async () => {
+    const { assistant, store } = createContext();
+    const result = await assistant.process({
+      externalMessageId: "thanks-duties-question",
+      externalUserId: "thanks-duties-user",
+      type: "text",
+      text: "Thanks, what are the daily duties?",
+      receivedAt: new Date().toISOString(),
+    });
+    store.close();
+
+    expect(result.status).toBe("answered");
+    if (result.status === "answered") {
+      expect(result.answer).not.toContain("glad I could help");
+    }
+  });
+
+  it.each([
+    "Hello, explain book arrangement.",
+    "Who are you, and explain book arrangement.",
+    "Thanks, tell me the daily duties.",
+  ])("does not discard the imperative guide request: %s", async (text) => {
+    const { assistant, store } = createContext();
+    const result = await assistant.process({
+      externalMessageId: `imperative-${text}`,
+      externalUserId: `imperative-user-${text}`,
+      type: "text",
+      text,
+      receivedAt: new Date().toISOString(),
+    });
+    store.close();
+
+    expect(result.status).toBe("answered");
+    if (result.status === "answered") {
+      expect(result.presentation).not.toBe("topic_shortcuts");
+      expect(result.answer).not.toContain("glad I could help");
+    }
   });
 
   it("tracks repeated clarification and clears it after a supported question", async () => {
@@ -342,7 +498,7 @@ describe("SupportAssistant", () => {
     class FailingLanguageModelGateway implements LanguageModelGateway {
       readonly deploymentName = "failing-model";
 
-      async answerSupportQuestion(
+      async generateSupportResponse(
         _input: LanguageModelInput,
       ): Promise<SupportModelResult> {
         throw new Error("Temporary model outage");

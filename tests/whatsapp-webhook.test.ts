@@ -406,7 +406,7 @@ describe("WhatsApp webhook", () => {
     expect(gateway.sent).toHaveLength(2);
     expect(gateway.sent[0]?.replyToMessageId).toBe("message-ordered-1");
     expect(gateway.sent[1]?.replyToMessageId).toBe("message-ordered-2");
-    expect(gateway.sent[1]?.body).toContain("SAL staff member");
+    expect(gateway.sent[1]?.body).toContain("SAL staff");
   });
 
   it("serializes separate concurrent callbacks from the same sender", async () => {
@@ -421,15 +421,15 @@ describe("WhatsApp webhook", () => {
     });
     const languageModel: LanguageModelGateway = {
       deploymentName: "delayed-model",
-      async answerSupportQuestion(_input: LanguageModelInput) {
+      async generateSupportResponse(_input: LanguageModelInput) {
         markStarted();
         await modelGate;
         return {
+          intent: "guide_answer",
           language: "en",
-          answer: "Delayed grounded answer.",
-          supported: true,
+          response: "Delayed grounded answer.",
           citedChunkIds: ["sal-6ad9f66d2582"],
-          requiresHuman: false,
+          reason: null,
         };
       },
     };
@@ -531,6 +531,194 @@ describe("WhatsApp webhook", () => {
     expect(gateway.sent).toHaveLength(1);
   });
 
+  it("recovers a handoff interrupted before its delivery was prepared", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const { app, assistant, store } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+    const message = {
+      externalMessageId: "message-handoff-recovery",
+      externalUserId: "254700000001",
+      type: "text" as const,
+      text: "I want to speak with staff",
+      receivedAt: new Date().toISOString(),
+    };
+    expect(store.beginWhatsAppProcessing(message.externalMessageId)).toBe("new");
+    const result = await assistant.process(message);
+    expect(result.status).toBe("handoff");
+    store.markWhatsAppProcessingFailed(
+      message.externalMessageId,
+      "Interrupted before delivery preparation",
+    );
+
+    const response = await injectWebhook(
+      app,
+      textPayload(message.externalMessageId, message.text),
+    );
+    await app.close();
+
+    expect(response.statusCode).toBe(200);
+    expect(gateway.sent).toHaveLength(1);
+    expect(gateway.sent[0]?.body).toContain("SAL staff");
+    expect(gateway.sent[0]?.body).toContain("BOT");
+  });
+
+  it("does not replay a handoff for a reclaimed follow-up message", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const { app, assistant, store } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+    await injectWebhook(
+      app,
+      textPayload("message-existing-handoff", "I want to speak with staff"),
+    );
+    const followUp = {
+      externalMessageId: "message-handoff-follow-up",
+      externalUserId: "254700000001",
+      type: "text" as const,
+      text: "Are you there?",
+      receivedAt: new Date().toISOString(),
+    };
+    expect(store.beginWhatsAppProcessing(followUp.externalMessageId)).toBe(
+      "new",
+    );
+    expect((await assistant.process(followUp)).status).toBe("human_active");
+    store.markWhatsAppProcessingFailed(
+      followUp.externalMessageId,
+      "Interrupted before suppression completed",
+    );
+
+    const response = await injectWebhook(
+      app,
+      textPayload(followUp.externalMessageId, followUp.text),
+    );
+    await app.close();
+
+    expect(response.statusCode).toBe(200);
+    expect(gateway.sent).toHaveLength(1);
+    expect(gateway.sent[0]?.replyToMessageId).toBe(
+      "message-existing-handoff",
+    );
+  });
+
+  it("does not reopen a cancelled handoff from a reclaimed follow-up", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const { app, assistant, store } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+    await injectWebhook(
+      app,
+      textPayload("message-follow-up-handoff", "I want to speak with staff"),
+    );
+    const followUp = {
+      externalMessageId: "message-follow-up-request-again",
+      externalUserId: "254700000001",
+      type: "text" as const,
+      text: "I still need to speak with staff",
+      receivedAt: new Date().toISOString(),
+    };
+    expect(store.beginWhatsAppProcessing(followUp.externalMessageId)).toBe(
+      "new",
+    );
+    expect((await assistant.process(followUp)).status).toBe("human_active");
+    store.markWhatsAppProcessingFailed(
+      followUp.externalMessageId,
+      "Interrupted before suppression completed",
+    );
+    await injectWebhook(
+      app,
+      textPayload("message-cancel-before-follow-up-retry", "BOT"),
+    );
+
+    const retry = await injectWebhook(
+      app,
+      textPayload(followUp.externalMessageId, followUp.text),
+    );
+    const humanActive = store.isHumanActiveForUser(followUp.externalUserId);
+    await app.close();
+
+    expect(retry.statusCode).toBe(200);
+    expect(humanActive).toBe(false);
+    expect(gateway.sent).toHaveLength(2);
+    expect(gateway.sent[1]?.replyToMessageId).toBe(
+      "message-cancel-before-follow-up-retry",
+    );
+  });
+
+  it("does not reopen a cancelled handoff when its old message is retried", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const { app, assistant, store } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+    const handoffMessage = {
+      externalMessageId: "message-cancelled-handoff",
+      externalUserId: "254700000001",
+      type: "text" as const,
+      text: "I want to speak with staff",
+      receivedAt: new Date().toISOString(),
+    };
+    expect(
+      store.beginWhatsAppProcessing(handoffMessage.externalMessageId),
+    ).toBe("new");
+    expect((await assistant.process(handoffMessage)).status).toBe("handoff");
+    store.markWhatsAppProcessingFailed(
+      handoffMessage.externalMessageId,
+      "Interrupted before delivery preparation",
+    );
+    await injectWebhook(
+      app,
+      textPayload("message-cancel-handoff-with-bot", "BOT"),
+    );
+
+    const response = await injectWebhook(
+      app,
+      textPayload(
+        handoffMessage.externalMessageId,
+        handoffMessage.text,
+      ),
+    );
+    const humanActive = store.isHumanActiveForUser(
+      handoffMessage.externalUserId,
+    );
+    await app.close();
+
+    expect(response.statusCode).toBe(200);
+    expect(humanActive).toBe(false);
+    expect(gateway.sent).toHaveLength(1);
+    expect(gateway.sent[0]?.replyToMessageId).toBe(
+      "message-cancel-handoff-with-bot",
+    );
+  });
+
+  it("does not resend a prepared handoff confirmation after BOT", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    gateway.failuresRemaining = 1;
+    const { app, store } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+    const handoffPayload = textPayload(
+      "message-prepared-cancelled-handoff",
+      "I want to speak with staff",
+    );
+    const failedHandoff = await injectWebhook(app, handoffPayload);
+    const botResponse = await injectWebhook(
+      app,
+      textPayload("message-cancel-prepared-handoff", "BOT"),
+    );
+    const staleRetry = await injectWebhook(app, handoffPayload);
+    const humanActive = store.isHumanActiveForUser("254700000001");
+    await app.close();
+
+    expect(failedHandoff.statusCode).toBe(503);
+    expect(botResponse.statusCode).toBe(200);
+    expect(staleRetry.statusCode).toBe(200);
+    expect(humanActive).toBe(false);
+    expect(gateway.sent).toHaveLength(1);
+    expect(gateway.sent[0]?.replyToMessageId).toBe(
+      "message-cancel-prepared-handoff",
+    );
+  });
+
   it("shows optional topic shortcuts for a standalone greeting", async () => {
     const gateway = new FakeWhatsAppGateway();
     const { app } = await buildApp(whatsAppConfig(), {
@@ -546,7 +734,7 @@ describe("WhatsApp webhook", () => {
     expect(response.statusCode).toBe(200);
     expect(gateway.sentButtons).toHaveLength(1);
     expect(gateway.sentButtons[0]?.message.body).toContain(
-      "type any question",
+      "Start A Library support assistant",
     );
     expect(gateway.sentButtons[0]?.message.buttons).toEqual([
       { id: "topic:en:arrange-books", title: "Arrange books" },
@@ -633,6 +821,9 @@ describe("WhatsApp webhook", () => {
 
     expect(response.statusCode).toBe(200);
     expect(gateway.sentButtons).toHaveLength(0);
+    expect(gateway.sent[0]?.body).toContain(
+      "Start A Library support assistant",
+    );
     expect(gateway.sent[0]?.body).toContain("type any question");
   });
 

@@ -80,7 +80,7 @@
 
   <rect class="node" x="435" y="527" width="530" height="88" rx="18" fill="url(#service)"/>
   <text x="700" y="560" text-anchor="middle" class="title">Policy, conversation and preference router</text>
-  <text x="700" y="586" text-anchor="middle" class="detail">Safety, social controls, clarify-first routing and handoff</text>
+  <text x="700" y="586" text-anchor="middle" class="detail">Critical controls, safety, topics, preferences and handoff state</text>
 
   <rect class="node" x="1025" y="515" width="275" height="106" rx="18" fill="url(#local)"/>
   <text x="1162" y="549" text-anchor="middle" class="title">SQLite</text>
@@ -118,11 +118,11 @@
   <path class="edge" d="M700 789V831"/>
   <rect class="node" x="535" y="836" width="330" height="86" rx="18" fill="url(#azure)"/>
   <text x="700" y="870" text-anchor="middle" class="title">GPT-5.6 Luna</text>
-  <text x="700" y="896" text-anchor="middle" class="detail">Grounded English or Kiswahili answer</text>
+  <text x="700" y="896" text-anchor="middle" class="detail">Intent + localized grounded or social response</text>
 
   <path class="edge" d="M700 922V962"/>
   <rect class="node" x="480" y="967" width="440" height="86" rx="18" fill="url(#service)"/>
-  <text x="700" y="1001" text-anchor="middle" class="title">Response validator and reply-mode resolver</text>
+  <text x="700" y="1001" text-anchor="middle" class="title">Intent, citation and reply-mode validator</text>
   <text x="700" y="1027" text-anchor="middle" class="detail">Schema, citations, policy, language and output format</text>
 
   <path class="edge" d="M565 1053V1125H285V1230"/>

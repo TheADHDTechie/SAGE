@@ -21,6 +21,7 @@ export type WhatsAppDeliveryStep =
   | (DeliveryStepState & {
       kind: "topic_shortcuts";
       language: "en" | "sw";
+      body?: string;
     })
   | (DeliveryStepState & {
       kind: "topic_list";
