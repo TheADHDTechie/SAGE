@@ -8,6 +8,10 @@ import type {
   SupportMessage,
   SupportedLanguage,
 } from "../domain/types.js";
+import type {
+  ReplyMode,
+  WhatsAppDeliveryPlan,
+} from "../whatsapp/delivery-types.js";
 
 interface ConversationRow {
   id: string;
@@ -17,6 +21,7 @@ interface ConversationRow {
 export interface WhatsAppDelivery {
   inboundMessageId: string;
   responseText: string | null;
+  plan: WhatsAppDeliveryPlan | null;
   status: "processing" | "pending" | "sending" | "sent" | "failed";
   attempts: number;
   allowDuringHandoff: boolean;
@@ -248,6 +253,56 @@ export class ConversationStore {
     return row !== undefined;
   }
 
+  replyPreference(externalUserId: string): {
+    mode: ReplyMode;
+    prompted: boolean;
+  } {
+    const row = this.database
+      .prepare(
+        `SELECT reply_mode AS mode,
+                voice_preference_prompted AS prompted
+         FROM contacts
+         WHERE id = ?`,
+      )
+      .get(this.hashContact(externalUserId)) as
+      | { mode: ReplyMode; prompted: number }
+      | undefined;
+    return row
+      ? { mode: row.mode, prompted: Boolean(row.prompted) }
+      : { mode: "auto", prompted: false };
+  }
+
+  setReplyPreference(externalUserId: string, mode: ReplyMode) {
+    const contactId = this.hashContact(externalUserId);
+    const now = new Date().toISOString();
+    this.database
+      .prepare(
+        `INSERT INTO contacts (
+           id, reply_mode, voice_preference_prompted, created_at, updated_at
+         ) VALUES (?, ?, 1, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           reply_mode = excluded.reply_mode,
+           voice_preference_prompted = 1,
+           updated_at = excluded.updated_at`,
+      )
+      .run(contactId, mode, now, now);
+  }
+
+  markVoicePreferencePrompted(externalUserId: string) {
+    const contactId = this.hashContact(externalUserId);
+    const now = new Date().toISOString();
+    this.database
+      .prepare(
+        `INSERT INTO contacts (
+           id, reply_mode, voice_preference_prompted, created_at, updated_at
+         ) VALUES (?, 'auto', 1, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           voice_preference_prompted = 1,
+           updated_at = excluded.updated_at`,
+      )
+      .run(contactId, now, now);
+  }
+
   beginWhatsAppProcessing(inboundMessageId: string) {
     const currentTime = new Date();
     const now = currentTime.toISOString();
@@ -258,8 +313,9 @@ export class ConversationStore {
       const inserted = this.database
         .prepare(
           `INSERT OR IGNORE INTO whatsapp_deliveries (
-             inbound_message_id, response_text, status, attempts, created_at, updated_at
-           ) VALUES (?, NULL, 'processing', 0, ?, ?)`,
+             inbound_message_id, response_text, delivery_plan_json, status,
+             attempts, created_at, updated_at
+           ) VALUES (?, NULL, NULL, 'processing', 0, ?, ?)`,
         )
         .run(inboundMessageId, now, now);
       if (inserted.changes === 1) {
@@ -272,6 +328,7 @@ export class ConversationStore {
            SET status = 'processing', updated_at = ?
            WHERE inbound_message_id = ?
              AND response_text IS NULL
+             AND delivery_plan_json IS NULL
              AND (
                status = 'failed'
                OR (status = 'processing' AND updated_at < ?)
@@ -287,15 +344,30 @@ export class ConversationStore {
     responseText: string,
     allowDuringHandoff = false,
   ) {
+    this.prepareWhatsAppDeliveryPlan(
+      inboundMessageId,
+      { steps: [{ kind: "text", body: responseText }] },
+      allowDuringHandoff,
+      responseText,
+    );
+  }
+
+  prepareWhatsAppDeliveryPlan(
+    inboundMessageId: string,
+    plan: WhatsAppDeliveryPlan,
+    allowDuringHandoff = false,
+    responseText: string | null = null,
+  ) {
     const now = new Date().toISOString();
     this.database
       .prepare(
         `INSERT INTO whatsapp_deliveries (
-           inbound_message_id, response_text, status, attempts,
+           inbound_message_id, response_text, delivery_plan_json, status, attempts,
            allow_during_handoff, created_at, updated_at
-         ) VALUES (?, ?, 'pending', 0, ?, ?, ?)
+         ) VALUES (?, ?, ?, 'pending', 0, ?, ?, ?)
          ON CONFLICT(inbound_message_id) DO UPDATE SET
            response_text = excluded.response_text,
+           delivery_plan_json = excluded.delivery_plan_json,
            allow_during_handoff = excluded.allow_during_handoff,
            status = CASE
              WHEN whatsapp_deliveries.status = 'sent' THEN 'sent'
@@ -303,7 +375,14 @@ export class ConversationStore {
            END,
            updated_at = excluded.updated_at`,
       )
-      .run(inboundMessageId, responseText, allowDuringHandoff ? 1 : 0, now, now);
+      .run(
+        inboundMessageId,
+        responseText,
+        JSON.stringify(plan),
+        allowDuringHandoff ? 1 : 0,
+        now,
+        now,
+      );
   }
 
   whatsAppDelivery(inboundMessageId: string): WhatsAppDelivery | undefined {
@@ -311,6 +390,7 @@ export class ConversationStore {
       .prepare(
         `SELECT inbound_message_id AS inboundMessageId,
                 response_text AS responseText,
+                delivery_plan_json AS planJson,
                 status,
                 attempts,
                 allow_during_handoff AS allowDuringHandoff
@@ -318,16 +398,35 @@ export class ConversationStore {
          WHERE inbound_message_id = ?`,
       )
       .get(inboundMessageId) as
-      | (Omit<WhatsAppDelivery, "allowDuringHandoff"> & {
+      | (Omit<WhatsAppDelivery, "allowDuringHandoff" | "plan"> & {
           allowDuringHandoff: number;
+          planJson: string | null;
         })
       | undefined;
     return delivery
       ? {
           ...delivery,
+          plan: delivery.planJson
+            ? (JSON.parse(delivery.planJson) as WhatsAppDeliveryPlan)
+            : delivery.responseText
+              ? { steps: [{ kind: "text", body: delivery.responseText }] }
+              : null,
           allowDuringHandoff: Boolean(delivery.allowDuringHandoff),
         }
       : undefined;
+  }
+
+  saveWhatsAppDeliveryPlan(
+    inboundMessageId: string,
+    plan: WhatsAppDeliveryPlan,
+  ) {
+    this.database
+      .prepare(
+        `UPDATE whatsapp_deliveries
+         SET delivery_plan_json = ?, updated_at = ?
+         WHERE inbound_message_id = ?`,
+      )
+      .run(JSON.stringify(plan), new Date().toISOString(), inboundMessageId);
   }
 
   claimWhatsAppDelivery(inboundMessageId: string) {
@@ -338,7 +437,7 @@ export class ConversationStore {
         `UPDATE whatsapp_deliveries
          SET status = 'sending', attempts = attempts + 1, updated_at = ?
          WHERE inbound_message_id = ?
-           AND response_text IS NOT NULL
+           AND (response_text IS NOT NULL OR delivery_plan_json IS NOT NULL)
            AND (
              status IN ('pending', 'failed')
              OR (status = 'sending' AND updated_at < ?)
@@ -376,7 +475,8 @@ export class ConversationStore {
              last_error = ?,
              updated_at = ?
          WHERE inbound_message_id = ?
-           AND response_text IS NULL`,
+           AND response_text IS NULL
+           AND delivery_plan_json IS NULL`,
       )
       .run(error.slice(0, 1000), new Date().toISOString(), inboundMessageId);
   }
@@ -506,6 +606,9 @@ export class ConversationStore {
     this.database.exec(`
       CREATE TABLE IF NOT EXISTS contacts (
         id TEXT PRIMARY KEY,
+        reply_mode TEXT NOT NULL DEFAULT 'auto'
+          CHECK (reply_mode IN ('auto', 'text', 'voice', 'both')),
+        voice_preference_prompted INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
@@ -559,6 +662,7 @@ export class ConversationStore {
       CREATE TABLE IF NOT EXISTS whatsapp_deliveries (
         inbound_message_id TEXT PRIMARY KEY,
         response_text TEXT,
+        delivery_plan_json TEXT,
         status TEXT NOT NULL CHECK (
           status IN ('processing', 'pending', 'sending', 'sent', 'failed')
         ),
@@ -575,5 +679,25 @@ export class ConversationStore {
       CREATE INDEX IF NOT EXISTS idx_messages_conversation
         ON messages(conversation_id, created_at);
     `);
+    this.ensureColumn(
+      "contacts",
+      "reply_mode",
+      "TEXT NOT NULL DEFAULT 'auto' CHECK (reply_mode IN ('auto', 'text', 'voice', 'both'))",
+    );
+    this.ensureColumn(
+      "contacts",
+      "voice_preference_prompted",
+      "INTEGER NOT NULL DEFAULT 0",
+    );
+    this.ensureColumn("whatsapp_deliveries", "delivery_plan_json", "TEXT");
+  }
+
+  private ensureColumn(table: string, column: string, definition: string) {
+    const columns = this.database
+      .prepare(`PRAGMA table_info(${table})`)
+      .all() as Array<{ name: string }>;
+    if (!columns.some((candidate) => candidate.name === column)) {
+      this.database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    }
   }
 }

@@ -10,6 +10,7 @@ param(
   [string] $AzureAiResourceName = "ai-nour2005-0011",
   [string] $AzureSpeechEndpoint = "https://ai-nour20055617ai423721357232.cognitiveservices.azure.com",
   [string] $AzureSpeechResourceName = "ai-nour20055617ai423721357232",
+  [string] $AzureTtsEndpoint = "https://eastus2.tts.speech.microsoft.com",
   [string] $ImageTag = (Get-Date -Format "yyyyMMddHHmmss"),
   [switch] $SkipBuild,
   [switch] $EnableWhatsApp,
@@ -132,6 +133,8 @@ $deploymentJson = az deployment group create `
     azureLlmDeployment=$AzureLlmDeployment `
     speechEnabled=$($EnableSpeech.IsPresent.ToString().ToLowerInvariant()) `
     azureSpeechEndpoint=$AzureSpeechEndpoint `
+    azureSpeechResourceName=$AzureSpeechResourceName `
+    azureTtsEndpoint=$AzureTtsEndpoint `
     contactHashKey=$contactHashKey `
     whatsappEnabled=$($EnableWhatsApp.IsPresent.ToString().ToLowerInvariant()) `
     whatsappVerifyToken=$whatsAppVerifyToken `

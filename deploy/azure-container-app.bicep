@@ -25,6 +25,12 @@ param speechEnabled bool = false
 @description('Azure AI Speech resource endpoint.')
 param azureSpeechEndpoint string = ''
 
+@description('Azure AI Speech resource name used for managed-identity TTS.')
+param azureSpeechResourceName string = ''
+
+@description('Regional Azure text-to-speech endpoint.')
+param azureTtsEndpoint string = ''
+
 @secure()
 param contactHashKey string
 
@@ -155,6 +161,26 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'AZURE_SPEECH_ENDPOINT'
               value: azureSpeechEndpoint
+            }
+            {
+              name: 'AZURE_SPEECH_RESOURCE_ID'
+              value: resourceId('Microsoft.CognitiveServices/accounts', azureSpeechResourceName)
+            }
+            {
+              name: 'VOICE_REPLIES_ENABLED'
+              value: speechEnabled && whatsappEnabled ? 'true' : 'false'
+            }
+            {
+              name: 'AZURE_TTS_ENDPOINT'
+              value: azureTtsEndpoint
+            }
+            {
+              name: 'AZURE_TTS_VOICE_EN'
+              value: 'en-KE-AsiliaNeural'
+            }
+            {
+              name: 'AZURE_TTS_VOICE_SW'
+              value: 'sw-KE-ZuriNeural'
             }
             {
               name: 'ENABLE_TEST_ENDPOINTS'

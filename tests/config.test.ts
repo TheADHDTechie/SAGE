@@ -32,4 +32,13 @@ describe("WhatsApp configuration", () => {
       }),
     ).toThrow();
   });
+
+  it("requires a TTS endpoint and authentication when voice replies are enabled", () => {
+    expect(() =>
+      loadConfig({
+        ENABLE_TEST_ENDPOINTS: "false",
+        VOICE_REPLIES_ENABLED: "true",
+      }),
+    ).toThrow();
+  });
 });

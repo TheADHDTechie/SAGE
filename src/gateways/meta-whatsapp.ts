@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { AppConfig } from "../config.js";
 import type {
   WhatsAppGateway,
+  WhatsAppListMessage,
   WhatsAppMedia,
   WhatsAppSendResult,
 } from "./whatsapp.js";
@@ -16,6 +17,10 @@ const mediaMetadataSchema = z.object({
 
 const sendMessageResponseSchema = z.object({
   messages: z.array(z.object({ id: z.string().min(1) })).min(1),
+});
+
+const uploadMediaResponseSchema = z.object({
+  id: z.string().min(1),
 });
 
 const markReadResponseSchema = z.object({ success: z.boolean() });
@@ -117,6 +122,35 @@ export class MetaWhatsAppGateway implements WhatsAppGateway {
     await parseResponse(response, markReadResponseSchema, "mark message as read");
   }
 
+  async uploadAudio(input: {
+    bytes: Uint8Array;
+    mimeType: string;
+    fileName: string;
+  }): Promise<{ mediaId: string }> {
+    if (input.bytes.byteLength > this.config.MAX_AUDIO_BYTES) {
+      throw new Error(
+        `Synthesized audio exceeds the ${this.config.MAX_AUDIO_BYTES}-byte limit`,
+      );
+    }
+    const form = new FormData();
+    form.append("messaging_product", "whatsapp");
+    form.append(
+      "file",
+      new Blob([new Uint8Array(input.bytes)], { type: input.mimeType }),
+      input.fileName,
+    );
+    const response = await this.authorizedFetch(this.mediaUploadUrl(), {
+      method: "POST",
+      body: form,
+    });
+    const result = await parseResponse(
+      response,
+      uploadMediaResponseSchema,
+      "upload WhatsApp audio",
+    );
+    return { mediaId: result.id };
+  }
+
   async sendText(input: {
     to: string;
     body: string;
@@ -149,12 +183,87 @@ export class MetaWhatsAppGateway implements WhatsAppGateway {
     return { messageIds: result.messages.map((message) => message.id) };
   }
 
+  async sendAudio(input: {
+    to: string;
+    mediaId: string;
+    replyToMessageId?: string;
+  }): Promise<WhatsAppSendResult> {
+    return this.sendMessage(
+      {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: input.to,
+        type: "audio",
+        audio: {
+          id: input.mediaId,
+          voice: true,
+        },
+      },
+      input.replyToMessageId,
+      "send WhatsApp audio message",
+    );
+  }
+
+  async sendList(input: {
+    to: string;
+    list: WhatsAppListMessage;
+    replyToMessageId?: string;
+  }): Promise<WhatsAppSendResult> {
+    return this.sendMessage(
+      {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: input.to,
+        type: "interactive",
+        interactive: {
+          type: "list",
+          body: { text: input.list.body },
+          action: {
+            button: input.list.button,
+            sections: input.list.sections,
+          },
+        },
+      },
+      input.replyToMessageId,
+      "send WhatsApp list message",
+    );
+  }
+
   private messagesUrl() {
     return new URL(
       `${this.graphBaseUrl}/${this.config.WHATSAPP_GRAPH_API_VERSION}/${encodeURIComponent(
         this.required("WHATSAPP_PHONE_NUMBER_ID"),
       )}/messages`,
     );
+  }
+
+  private mediaUploadUrl() {
+    return new URL(
+      `${this.graphBaseUrl}/${this.config.WHATSAPP_GRAPH_API_VERSION}/${encodeURIComponent(
+        this.required("WHATSAPP_PHONE_NUMBER_ID"),
+      )}/media`,
+    );
+  }
+
+  private async sendMessage(
+    payload: Record<string, unknown>,
+    replyToMessageId: string | undefined,
+    action: string,
+  ) {
+    if (replyToMessageId) {
+      payload.context = { message_id: replyToMessageId };
+    }
+    const response = await this.authorizedFetch(this.messagesUrl(), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const result = await parseResponse(
+      response,
+      sendMessageResponseSchema,
+      action,
+    );
+    return { messageIds: result.messages.map((message) => message.id) };
   }
 
   private async authorizedFetch(url: URL, init: RequestInit = {}) {

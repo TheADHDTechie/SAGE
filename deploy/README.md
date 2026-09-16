@@ -110,3 +110,8 @@ transcription with English (`en-US`) and Kiswahili (`sw-KE`) candidate locales.
 It grants the Container App managed identity `Cognitive Services User` access
 to the Speech resource, so no Speech key is stored in Container Apps. Without
 `-EnableSpeech`, real audio receives the transcription-failure fallback.
+
+With WhatsApp and Speech both enabled, voice replies are also enabled. SAGE uses
+`en-KE-AsiliaNeural` for English and `sw-KE-ZuriNeural` for Kiswahili, uploads
+OGG/Opus output to Meta, and sends it as a WhatsApp voice message. Users can
+send `SETTINGS` or `MIPANGILIO` to choose Automatic, Text, Voice, or Both.

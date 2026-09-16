@@ -4,9 +4,15 @@ import { z } from "zod";
 import type { SupportAssistant } from "../application/support-assistant.js";
 import type { AppConfig } from "../config.js";
 import type { SupportResponse } from "../domain/types.js";
+import type { SpeechSynthesizer } from "../gateways/speech-synthesizer.js";
 import type { SpeechTranscriber } from "../gateways/speech-transcriber.js";
 import type { WhatsAppGateway } from "../gateways/whatsapp.js";
 import type { ConversationStore } from "../infrastructure/database.js";
+import type {
+  ReplyMode,
+  WhatsAppDeliveryPlan,
+  WhatsAppDeliveryStep,
+} from "./delivery-types.js";
 
 const verificationQuerySchema = z.object({
   "hub.mode": z.literal("subscribe"),
@@ -26,6 +32,23 @@ const webhookMessageSchema = z
         id: z.string().min(1),
         mime_type: z.string().optional(),
         voice: z.boolean().optional(),
+      })
+      .optional(),
+    interactive: z
+      .object({
+        type: z.string(),
+        list_reply: z
+          .object({
+            id: z.string(),
+            title: z.string().optional(),
+          })
+          .optional(),
+        button_reply: z
+          .object({
+            id: z.string(),
+            title: z.string().optional(),
+          })
+          .optional(),
       })
       .optional(),
   })
@@ -86,6 +109,7 @@ interface WhatsAppRouteDependencies {
   assistant: SupportAssistant;
   store: ConversationStore;
   speechTranscriber: SpeechTranscriber;
+  speechSynthesizer: SpeechSynthesizer | undefined;
   gateway: WhatsAppGateway;
   rawBodyFor(request: FastifyRequest): Buffer | undefined;
 }
@@ -99,6 +123,7 @@ export function registerWhatsAppRoutes(
     assistant,
     store,
     speechTranscriber,
+    speechSynthesizer,
     gateway,
     rawBodyFor,
   } = dependencies;
@@ -191,6 +216,7 @@ export function registerWhatsAppRoutes(
                 assistant,
                 store,
                 speechTranscriber,
+                speechSynthesizer,
                 gateway,
                 markRead: config.WHATSAPP_MARK_MESSAGES_READ,
               });
@@ -315,19 +341,26 @@ async function processWhatsAppMessage(input: {
   assistant: SupportAssistant;
   store: ConversationStore;
   speechTranscriber: SpeechTranscriber;
+  speechSynthesizer: SpeechSynthesizer | undefined;
   gateway: WhatsAppGateway;
   markRead: boolean;
 }) {
-  const { message, assistant, store, speechTranscriber, gateway, markRead } =
-    input;
+  const {
+    message,
+    assistant,
+    store,
+    speechTranscriber,
+    speechSynthesizer,
+    gateway,
+    markRead,
+  } = input;
 
   const processingState = store.beginWhatsAppProcessing(message.id);
   if (!processingState) {
     const existingDelivery = store.whatsAppDelivery(message.id);
     if (
-      existingDelivery?.responseText &&
-      existingDelivery.status !== "sent" &&
-      existingDelivery.status !== "sending"
+      existingDelivery?.plan &&
+      existingDelivery.status !== "sent"
     ) {
       if (
         store.isHumanActiveForUser(message.from) &&
@@ -339,7 +372,6 @@ async function processWhatsAppMessage(input: {
       await sendPreparedDelivery(
         message.id,
         message.from,
-        existingDelivery.responseText,
         store,
         gateway,
       );
@@ -368,6 +400,32 @@ async function processWhatsAppMessage(input: {
     if (message.type === "text" && message.text?.body.trim()) {
       text = message.text.body.trim();
       inputType = "text";
+    } else if (message.type === "interactive") {
+      if (store.isHumanActiveForUser(message.from)) {
+        store.completeWhatsAppWithoutResponse(message.id);
+        return;
+      }
+      const selection = preferenceSelection(message);
+      if (!selection) {
+        const response =
+          "I could not read that selection. Send SETTINGS to choose how SAGE replies.";
+        store.prepareWhatsAppDelivery(message.id, response);
+        await sendPreparedDelivery(
+          message.id,
+          message.from,
+          store,
+          gateway,
+        );
+        return;
+      }
+      store.setReplyPreference(message.from, selection.mode);
+      const response = preferenceConfirmation(
+        selection.mode,
+        selection.language,
+      );
+      store.prepareWhatsAppDelivery(message.id, response);
+      await sendPreparedDelivery(message.id, message.from, store, gateway);
+      return;
     } else if (message.type === "audio" && message.audio?.id) {
       if (store.isHumanActiveForUser(message.from)) {
         store.completeWhatsAppWithoutResponse(message.id);
@@ -396,7 +454,6 @@ async function processWhatsAppMessage(input: {
         await sendPreparedDelivery(
           message.id,
           message.from,
-          response,
           store,
           gateway,
         );
@@ -413,10 +470,38 @@ async function processWhatsAppMessage(input: {
       await sendPreparedDelivery(
         message.id,
         message.from,
-        response,
         store,
         gateway,
       );
+      return;
+    }
+
+    const preferenceCommand = parsePreferenceCommand(text);
+    if (preferenceCommand) {
+      if (store.isHumanActiveForUser(message.from)) {
+        store.completeWhatsAppWithoutResponse(message.id);
+        return;
+      }
+      const current = store.replyPreference(message.from);
+      if (preferenceCommand.kind === "show") {
+        store.prepareWhatsAppDeliveryPlan(message.id, {
+          steps: [
+            {
+              kind: "list",
+              language: preferenceCommand.language,
+              currentMode: current.mode,
+            },
+          ],
+        });
+      } else {
+        store.setReplyPreference(message.from, preferenceCommand.mode);
+        const response = preferenceConfirmation(
+          preferenceCommand.mode,
+          preferenceCommand.language,
+        );
+        store.prepareWhatsAppDelivery(message.id, response);
+      }
+      await sendPreparedDelivery(message.id, message.from, store, gateway);
       return;
     }
 
@@ -451,21 +536,26 @@ async function processWhatsAppMessage(input: {
     }
 
     const responseText = formatSupportResponse(assistantResponse);
-    store.prepareWhatsAppDelivery(
-      message.id,
+    const plan = await createResponsePlan({
+      response: assistantResponse,
       responseText,
-      assistantResponse.status === "handoff",
-    );
-    await sendPreparedDelivery(
-      message.id,
-      message.from,
-      responseText,
+      inputType,
+      recipient: message.from,
+      inboundMessageId: message.id,
       store,
       gateway,
+      speechSynthesizer,
+    });
+    store.prepareWhatsAppDeliveryPlan(
+      message.id,
+      plan,
+      assistantResponse.status === "handoff",
+      responseText,
     );
+    await sendPreparedDelivery(message.id, message.from, store, gateway);
   } catch (error) {
     const delivery = store.whatsAppDelivery(message.id);
-    if (!delivery?.responseText) {
+    if (!delivery?.responseText && !delivery?.plan) {
       store.markWhatsAppProcessingFailed(message.id, errorMessage(error));
     }
     throw error;
@@ -475,7 +565,6 @@ async function processWhatsAppMessage(input: {
 async function sendPreparedDelivery(
   inboundMessageId: string,
   recipient: string,
-  responseText: string,
   store: ConversationStore,
   gateway: WhatsAppGateway,
 ) {
@@ -488,15 +577,157 @@ async function sendPreparedDelivery(
   }
 
   try {
-    const result = await gateway.sendText({
-      to: recipient,
-      body: responseText,
-      replyToMessageId: inboundMessageId,
-    });
-    store.markWhatsAppDeliverySent(inboundMessageId, result.messageIds);
+    const plan = delivery?.plan;
+    if (!plan) {
+      throw new Error("WhatsApp delivery has no prepared response plan");
+    }
+    for (const step of plan.steps) {
+      if (step.messageIds) {
+        if (step.kind === "list") {
+          store.markVoicePreferencePrompted(recipient);
+        }
+        continue;
+      }
+      const result = await sendDeliveryStep(
+        step,
+        recipient,
+        inboundMessageId,
+        store,
+        gateway,
+      );
+      step.messageIds = result.messageIds;
+      store.saveWhatsAppDeliveryPlan(inboundMessageId, plan);
+      if (step.kind === "list") {
+        store.markVoicePreferencePrompted(recipient);
+      }
+    }
+    store.markWhatsAppDeliverySent(
+      inboundMessageId,
+      plan.steps.flatMap((step) => step.messageIds ?? []),
+    );
   } catch (error) {
     store.markWhatsAppDeliveryFailed(inboundMessageId, errorMessage(error));
     throw error;
+  }
+}
+
+async function sendDeliveryStep(
+  step: WhatsAppDeliveryStep,
+  recipient: string,
+  inboundMessageId: string,
+  store: ConversationStore,
+  gateway: WhatsAppGateway,
+) {
+  if (step.kind === "audio") {
+    return gateway.sendAudio({
+      to: recipient,
+      mediaId: step.mediaId,
+      replyToMessageId: inboundMessageId,
+    });
+  }
+  if (step.kind === "list") {
+    try {
+      return await gateway.sendList({
+        to: recipient,
+        list: preferenceList(step.language, step.currentMode),
+        replyToMessageId: inboundMessageId,
+      });
+    } catch (error) {
+      store.recordAuditEvent({
+        eventType: "whatsapp_interactive_failure",
+        details: {
+          messageId: inboundMessageId,
+          error: errorMessage(error),
+        },
+      });
+      return gateway.sendText({
+        to: recipient,
+        body: preferenceTextFallback(step.language),
+        replyToMessageId: inboundMessageId,
+      });
+    }
+  }
+  return gateway.sendText({
+    to: recipient,
+    body: step.body,
+    replyToMessageId: inboundMessageId,
+  });
+}
+
+async function createResponsePlan(input: {
+  response: Exclude<SupportResponse, { status: "duplicate" | "human_active" }>;
+  responseText: string;
+  inputType: "text" | "voice";
+  recipient: string;
+  inboundMessageId: string;
+  store: ConversationStore;
+  gateway: WhatsAppGateway;
+  speechSynthesizer: SpeechSynthesizer | undefined;
+}): Promise<WhatsAppDeliveryPlan> {
+  const {
+    response,
+    responseText,
+    inputType,
+    recipient,
+    inboundMessageId,
+    store,
+    gateway,
+    speechSynthesizer,
+  } = input;
+  if (response.status !== "answered") {
+    return { steps: [{ kind: "text", body: responseText }] };
+  }
+
+  const preference = store.replyPreference(recipient);
+  const replyMode =
+    preference.mode === "auto"
+      ? inputType === "voice"
+        ? "voice"
+        : "text"
+      : preference.mode;
+  if (replyMode === "text" || !speechSynthesizer) {
+    return { steps: [{ kind: "text", body: responseText }] };
+  }
+
+  const spoken = spokenAnswer(response.answer, response.language);
+  try {
+    const audio = await speechSynthesizer.synthesize({
+      text: spoken.text,
+      language: response.language,
+    });
+    const uploaded = await gateway.uploadAudio(audio);
+    const steps: WhatsAppDeliveryStep[] = [
+      { kind: "audio", mediaId: uploaded.mediaId },
+    ];
+    if (replyMode === "both" || spoken.shortened) {
+      steps.push({ kind: "text", body: responseText });
+    } else {
+      const sources = formatSources(response);
+      if (sources) {
+        steps.push({ kind: "text", body: sources });
+      }
+    }
+    if (
+      inputType === "voice" &&
+      preference.mode === "auto" &&
+      !preference.prompted
+    ) {
+      steps.push({
+        kind: "list",
+        language: response.language === "sw" ? "sw" : "en",
+        currentMode: preference.mode,
+      });
+    }
+    return { steps };
+  } catch (error) {
+    store.recordAuditEvent({
+      eventType: "whatsapp_voice_reply_failure",
+      details: {
+        messageId: inboundMessageId,
+        error: errorMessage(error),
+      },
+    });
+    return { steps: [{ kind: "text", body: responseText }] };
   }
 }
 
@@ -507,12 +738,209 @@ function formatSupportResponse(response: Exclude<SupportResponse, {
     return response.answer;
   }
 
+  return `${response.answer}\n\n${formatSources(response)}`;
+}
+
+function formatSources(
+  response: Extract<SupportResponse, { status: "answered" }>,
+) {
+  if (response.citations.length === 0) {
+    return "";
+  }
   const sourceLabel = response.language === "sw" ? "Vyanzo" : "Sources";
   const sources = response.citations.map(
     (citation) =>
       `- ${citation.title}; ${citation.chapter}; pages ${citation.pages}`,
   );
-  return `${response.answer}\n\n${sourceLabel}:\n${sources.join("\n")}`;
+  return `${sourceLabel}:\n${sources.join("\n")}`;
+}
+
+function spokenAnswer(answer: string, language: string) {
+  const normalized = answer
+    .replace(/[*_#`]/g, "")
+    .replace(/^\s*[-•]\s+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const maximumLength = 1200;
+  if (normalized.length <= maximumLength) {
+    return { text: normalized, shortened: false };
+  }
+  const candidate = normalized.slice(0, maximumLength);
+  const sentenceEnd = Math.max(
+    candidate.lastIndexOf("."),
+    candidate.lastIndexOf("!"),
+    candidate.lastIndexOf("?"),
+  );
+  const summary =
+    candidate.slice(0, sentenceEnd > 600 ? sentenceEnd + 1 : maximumLength)
+      .trim();
+  return {
+    text: `${summary} ${
+      language === "sw"
+        ? "Nimetuma jibu kamili kwa maandishi."
+        : "I have sent the complete answer in text."
+    }`,
+    shortened: true,
+  };
+}
+
+function preferenceSelection(
+  message: z.infer<typeof webhookMessageSchema>,
+): { mode: ReplyMode; language: "en" | "sw" } | undefined {
+  const id =
+    message.interactive?.list_reply?.id ??
+    message.interactive?.button_reply?.id;
+  const match = /^preference:(en|sw):(auto|text|voice|both)$/.exec(id ?? "");
+  return match
+    ? {
+        language: match[1] as "en" | "sw",
+        mode: match[2] as ReplyMode,
+      }
+    : undefined;
+}
+
+function parsePreferenceCommand(message: string):
+  | { kind: "show"; language: "en" | "sw" }
+  | { kind: "set"; language: "en" | "sw"; mode: ReplyMode }
+  | undefined {
+  const normalized = message
+    .trim()
+    .toLowerCase()
+    .replace(/[.!?]+$/, "");
+  if (["settings", "my settings"].includes(normalized)) {
+    return { kind: "show", language: "en" };
+  }
+  if (["mipangilio", "mpangilio"].includes(normalized)) {
+    return { kind: "show", language: "sw" };
+  }
+  const commands: Record<string, { mode: ReplyMode; language: "en" | "sw" }> = {
+    auto: { mode: "auto", language: "en" },
+    automatic: { mode: "auto", language: "en" },
+    text: { mode: "text", language: "en" },
+    "text replies": { mode: "text", language: "en" },
+    voice: { mode: "voice", language: "en" },
+    "voice replies": { mode: "voice", language: "en" },
+    both: { mode: "both", language: "en" },
+    otomatiki: { mode: "auto", language: "sw" },
+    maandishi: { mode: "text", language: "sw" },
+    sauti: { mode: "voice", language: "sw" },
+    zote: { mode: "both", language: "sw" },
+  };
+  const selected = commands[normalized];
+  return selected ? { kind: "set", ...selected } : undefined;
+}
+
+function preferenceConfirmation(mode: ReplyMode, language: "en" | "sw") {
+  const labels = {
+    en: {
+      auto: "Automatic",
+      text: "Text",
+      voice: "Voice",
+      both: "Voice and text",
+    },
+    sw: {
+      auto: "Otomatiki",
+      text: "Maandishi",
+      voice: "Sauti",
+      both: "Sauti na maandishi",
+    },
+  } as const;
+  return language === "sw"
+    ? `Mpangilio wako wa majibu sasa ni ${labels.sw[mode]}. Tuma MIPANGILIO wakati wowote ili kuubadilisha.`
+    : `Your reply preference is now ${labels.en[mode]}. Send SETTINGS at any time to change it.`;
+}
+
+function preferenceList(language: "en" | "sw", currentMode: ReplyMode) {
+  const prefix = `preference:${language}:`;
+  if (language === "sw") {
+    return {
+      body: `Chagua jinsi SAGE inavyojibu. Mpangilio wa sasa: ${preferenceModeLabel(
+        currentMode,
+        language,
+      )}.`,
+      button: "Chagua",
+      sections: [
+        {
+          title: "Aina ya jibu",
+          rows: [
+            {
+              id: `${prefix}auto`,
+              title: "Otomatiki",
+              description: "Fuata aina ya ujumbe wangu",
+            },
+            {
+              id: `${prefix}text`,
+              title: "Maandishi",
+              description: "Jibu kila wakati kwa maandishi",
+            },
+            {
+              id: `${prefix}voice`,
+              title: "Sauti",
+              description: "Sauti pamoja na vyanzo vifupi",
+            },
+            {
+              id: `${prefix}both`,
+              title: "Zote",
+              description: "Sauti na jibu kamili kwa maandishi",
+            },
+          ],
+        },
+      ],
+    };
+  }
+  return {
+    body: `Choose how SAGE replies. Current preference: ${preferenceModeLabel(
+      currentMode,
+      language,
+    )}.`,
+    button: "Choose an option",
+    sections: [
+      {
+        title: "Reply format",
+        rows: [
+          {
+            id: `${prefix}auto`,
+            title: "Automatic",
+            description: "Follow the format of my message",
+          },
+          {
+            id: `${prefix}text`,
+            title: "Text",
+            description: "Always reply with text",
+          },
+          {
+            id: `${prefix}voice`,
+            title: "Voice",
+            description: "Audio with short text sources",
+          },
+          {
+            id: `${prefix}both`,
+            title: "Both",
+            description: "Audio and the complete text answer",
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function preferenceModeLabel(mode: ReplyMode, language: "en" | "sw") {
+  const labels = {
+    en: { auto: "Automatic", text: "Text", voice: "Voice", both: "Both" },
+    sw: {
+      auto: "Otomatiki",
+      text: "Maandishi",
+      voice: "Sauti",
+      both: "Zote",
+    },
+  } as const;
+  return labels[language][mode];
+}
+
+function preferenceTextFallback(language: "en" | "sw") {
+  return language === "sw"
+    ? "Chagua aina ya majibu kwa kutuma: OTOMATIKI, MAANDISHI, SAUTI, au ZOTE."
+    : "Choose your reply format by sending: AUTO, TEXT, VOICE, or BOTH.";
 }
 
 function whatsappTimestamp(timestamp: string | undefined) {

@@ -39,8 +39,13 @@ const environmentSchema = z
     SPEECH_PROVIDER: z.enum(["mock", "azure"]).default("mock"),
     AZURE_SPEECH_ENDPOINT: optionalUrl,
     AZURE_SPEECH_KEY: optionalString,
+    AZURE_SPEECH_RESOURCE_ID: optionalString,
     AZURE_SPEECH_MODEL: z.string().default("MAI-Transcribe-2"),
     AZURE_SPEECH_TIMEOUT_MS: z.coerce.number().int().min(1000).default(45000),
+    VOICE_REPLIES_ENABLED: booleanFromString("false"),
+    AZURE_TTS_ENDPOINT: optionalUrl,
+    AZURE_TTS_VOICE_EN: z.string().default("en-KE-AsiliaNeural"),
+    AZURE_TTS_VOICE_SW: z.string().default("sw-KE-ZuriNeural"),
     FFMPEG_PATH: z.string().default("ffmpeg"),
     ENABLE_TEST_ENDPOINTS: z
       .enum(["true", "false"])
@@ -84,6 +89,24 @@ const environmentSchema = z
         path: ["AZURE_SPEECH_ENDPOINT"],
         message: "Required when SPEECH_PROVIDER=azure",
       });
+    }
+
+    if (value.VOICE_REPLIES_ENABLED) {
+      if (!value.AZURE_TTS_ENDPOINT) {
+        context.addIssue({
+          code: "custom",
+          path: ["AZURE_TTS_ENDPOINT"],
+          message: "Required when VOICE_REPLIES_ENABLED=true",
+        });
+      }
+      if (!value.AZURE_SPEECH_KEY && !value.AZURE_SPEECH_RESOURCE_ID) {
+        context.addIssue({
+          code: "custom",
+          path: ["AZURE_SPEECH_RESOURCE_ID"],
+          message:
+            "AZURE_SPEECH_RESOURCE_ID or AZURE_SPEECH_KEY is required when VOICE_REPLIES_ENABLED=true",
+        });
+      }
     }
 
     if (value.ENABLE_TEST_ENDPOINTS && !value.TEST_API_TOKEN) {

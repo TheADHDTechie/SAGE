@@ -14,6 +14,11 @@ import type {
   SpeechTranscription,
 } from "../src/gateways/speech-transcriber.js";
 import type {
+  SpeechSynthesizer,
+  SynthesizedSpeech,
+} from "../src/gateways/speech-synthesizer.js";
+import type {
+  WhatsAppListMessage,
   WhatsAppGateway,
   WhatsAppMedia,
   WhatsAppSendResult,
@@ -22,7 +27,9 @@ import type {
 const temporaryDirectories: string[] = [];
 const appSecret = "test-meta-app-secret";
 
-function whatsAppConfig() {
+function whatsAppConfig(
+  overrides: Record<string, string> = {},
+) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "sal-whatsapp-test-"));
   temporaryDirectories.push(directory);
   return loadConfig({
@@ -44,6 +51,7 @@ function whatsAppConfig() {
     WHATSAPP_ACCESS_TOKEN: "test-access-token",
     WHATSAPP_PHONE_NUMBER_ID: "phone-number-id",
     STAFF_API_TOKEN: "test-staff-token",
+    ...overrides,
   });
 }
 
@@ -55,8 +63,24 @@ class FakeWhatsAppGateway implements WhatsAppGateway {
   }> = [];
   readonly markedRead: string[] = [];
   readonly downloadedMedia: string[] = [];
+  readonly uploadedAudio: Array<{
+    bytes: Uint8Array;
+    mimeType: string;
+    fileName: string;
+  }> = [];
+  readonly sentAudio: Array<{
+    to: string;
+    mediaId: string;
+    replyToMessageId?: string;
+  }> = [];
+  readonly sentLists: Array<{
+    to: string;
+    list: WhatsAppListMessage;
+    replyToMessageId?: string;
+  }> = [];
   sendAttempts = 0;
   failuresRemaining = 0;
+  failOnAttempt: number | undefined;
   media: WhatsAppMedia = {
     bytes: new TextEncoder().encode("audio"),
     mimeType: "audio/ogg",
@@ -71,17 +95,66 @@ class FakeWhatsAppGateway implements WhatsAppGateway {
     this.markedRead.push(messageId);
   }
 
+  async uploadAudio(input: {
+    bytes: Uint8Array;
+    mimeType: string;
+    fileName: string;
+  }) {
+    this.uploadedAudio.push(input);
+    return { mediaId: `uploaded-${this.uploadedAudio.length}` };
+  }
+
   async sendText(input: {
     to: string;
     body: string;
     replyToMessageId?: string;
   }): Promise<WhatsAppSendResult> {
     this.sendAttempts += 1;
-    if (this.failuresRemaining > 0) {
+    if (
+      this.failuresRemaining > 0 ||
+      this.failOnAttempt === this.sendAttempts
+    ) {
       this.failuresRemaining -= 1;
+      this.failOnAttempt = undefined;
       throw new Error("Temporary Meta failure");
     }
     this.sent.push(input);
+    return { messageIds: [`outbound-${this.sendAttempts}`] };
+  }
+
+  async sendAudio(input: {
+    to: string;
+    mediaId: string;
+    replyToMessageId?: string;
+  }): Promise<WhatsAppSendResult> {
+    this.sendAttempts += 1;
+    if (
+      this.failuresRemaining > 0 ||
+      this.failOnAttempt === this.sendAttempts
+    ) {
+      this.failuresRemaining -= 1;
+      this.failOnAttempt = undefined;
+      throw new Error("Temporary Meta failure");
+    }
+    this.sentAudio.push(input);
+    return { messageIds: [`outbound-${this.sendAttempts}`] };
+  }
+
+  async sendList(input: {
+    to: string;
+    list: WhatsAppListMessage;
+    replyToMessageId?: string;
+  }): Promise<WhatsAppSendResult> {
+    this.sendAttempts += 1;
+    if (
+      this.failuresRemaining > 0 ||
+      this.failOnAttempt === this.sendAttempts
+    ) {
+      this.failuresRemaining -= 1;
+      this.failOnAttempt = undefined;
+      throw new Error("Temporary Meta failure");
+    }
+    this.sentLists.push(input);
     return { messageIds: [`outbound-${this.sendAttempts}`] };
   }
 }
@@ -98,6 +171,27 @@ class FakeSpeechTranscriber implements SpeechTranscriber {
     return {
       text: "How should books be organized?",
       language: "en",
+    };
+  }
+}
+
+class FakeSpeechSynthesizer implements SpeechSynthesizer {
+  readonly providerName = "fake-tts";
+  readonly inputs: Array<{ text: string; language: string }> = [];
+  failure: Error | undefined;
+
+  async synthesize(input: {
+    text: string;
+    language: "en" | "sw" | "mixed" | "unknown";
+  }): Promise<SynthesizedSpeech> {
+    this.inputs.push(input);
+    if (this.failure) {
+      throw this.failure;
+    }
+    return {
+      bytes: new Uint8Array([1, 2, 3]),
+      mimeType: "audio/ogg",
+      fileName: "answer.ogg",
     };
   }
 }
@@ -430,6 +524,224 @@ describe("WhatsApp webhook", () => {
     expect(gateway.sent[0]?.body).toContain("Organizing and Arranging Books");
   });
 
+  it("answers the first voice note with audio, sources, and a preference list", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const transcriber = new FakeSpeechTranscriber();
+    const synthesizer = new FakeSpeechSynthesizer();
+    const { app } = await buildApp(
+      whatsAppConfig({
+        VOICE_REPLIES_ENABLED: "true",
+        AZURE_TTS_ENDPOINT: "https://tts.example",
+        AZURE_SPEECH_KEY: "speech-key",
+      }),
+      {
+        whatsAppGateway: gateway,
+        speechTranscriber: transcriber,
+        speechSynthesizer: synthesizer,
+      },
+    );
+
+    const response = await injectWebhook(
+      app,
+      audioPayload("message-voice-reply"),
+    );
+    await app.close();
+
+    expect(response.statusCode).toBe(200);
+    expect(synthesizer.inputs).toHaveLength(1);
+    expect(gateway.uploadedAudio).toHaveLength(1);
+    expect(gateway.sentAudio).toEqual([
+      {
+        to: "254700000001",
+        mediaId: "uploaded-1",
+        replyToMessageId: "message-voice-reply",
+      },
+    ]);
+    expect(gateway.sent[0]?.body).toContain("Sources:");
+    expect(gateway.sentLists).toHaveLength(1);
+    expect(gateway.sentLists[0]?.list.sections[0]?.rows).toHaveLength(4);
+  });
+
+  it("offers the preference list only once for automatic voice replies", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const synthesizer = new FakeSpeechSynthesizer();
+    const { app } = await buildApp(
+      whatsAppConfig({
+        VOICE_REPLIES_ENABLED: "true",
+        AZURE_TTS_ENDPOINT: "https://tts.example",
+        AZURE_SPEECH_KEY: "speech-key",
+      }),
+      {
+        whatsAppGateway: gateway,
+        speechTranscriber: new FakeSpeechTranscriber(),
+        speechSynthesizer: synthesizer,
+      },
+    );
+
+    await injectWebhook(app, audioPayload("message-voice-first"));
+    await injectWebhook(app, audioPayload("message-voice-second"));
+    await app.close();
+
+    expect(gateway.sentAudio).toHaveLength(2);
+    expect(gateway.sentLists).toHaveLength(1);
+  });
+
+  it("applies an interactive text preference to later voice questions", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const synthesizer = new FakeSpeechSynthesizer();
+    const { app } = await buildApp(
+      whatsAppConfig({
+        VOICE_REPLIES_ENABLED: "true",
+        AZURE_TTS_ENDPOINT: "https://tts.example",
+        AZURE_SPEECH_KEY: "speech-key",
+      }),
+      {
+        whatsAppGateway: gateway,
+        speechTranscriber: new FakeSpeechTranscriber(),
+        speechSynthesizer: synthesizer,
+      },
+    );
+
+    const selected = await injectWebhook(
+      app,
+      interactivePayload("message-preference-text", "preference:en:text"),
+    );
+    const answered = await injectWebhook(
+      app,
+      audioPayload("message-after-text-preference"),
+    );
+    await app.close();
+
+    expect(selected.statusCode).toBe(200);
+    expect(answered.statusCode).toBe(200);
+    expect(gateway.sent[0]?.body).toContain("preference is now Text");
+    expect(gateway.sent[1]?.body).toContain("Sources:");
+    expect(gateway.sentAudio).toHaveLength(0);
+    expect(synthesizer.inputs).toHaveLength(0);
+  });
+
+  it("opens preference settings through a typed command", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const { app } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+
+    const response = await injectWebhook(
+      app,
+      textPayload("message-settings", "SETTINGS"),
+    );
+    await app.close();
+
+    expect(response.statusCode).toBe(200);
+    expect(gateway.sentLists).toHaveLength(1);
+    expect(gateway.sent).toHaveLength(0);
+  });
+
+  it("reuses uploaded audio when an outbound voice send is retried", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    gateway.failuresRemaining = 1;
+    const synthesizer = new FakeSpeechSynthesizer();
+    const { app } = await buildApp(
+      whatsAppConfig({
+        VOICE_REPLIES_ENABLED: "true",
+        AZURE_TTS_ENDPOINT: "https://tts.example",
+        AZURE_SPEECH_KEY: "speech-key",
+      }),
+      {
+        whatsAppGateway: gateway,
+        speechTranscriber: new FakeSpeechTranscriber(),
+        speechSynthesizer: synthesizer,
+      },
+    );
+    const payload = audioPayload("message-audio-retry");
+
+    const failed = await injectWebhook(app, payload);
+    const retried = await injectWebhook(app, payload);
+    await app.close();
+
+    expect(failed.statusCode).toBe(503);
+    expect(retried.statusCode).toBe(200);
+    expect(synthesizer.inputs).toHaveLength(1);
+    expect(gateway.uploadedAudio).toHaveLength(1);
+    expect(gateway.sentAudio).toHaveLength(1);
+  });
+
+  it("does not resend audio when a later source message is retried", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    gateway.failOnAttempt = 2;
+    const synthesizer = new FakeSpeechSynthesizer();
+    const { app } = await buildApp(
+      whatsAppConfig({
+        VOICE_REPLIES_ENABLED: "true",
+        AZURE_TTS_ENDPOINT: "https://tts.example",
+        AZURE_SPEECH_KEY: "speech-key",
+      }),
+      {
+        whatsAppGateway: gateway,
+        speechTranscriber: new FakeSpeechTranscriber(),
+        speechSynthesizer: synthesizer,
+      },
+    );
+    const payload = audioPayload("message-source-retry");
+
+    const failed = await injectWebhook(app, payload);
+    const retried = await injectWebhook(app, payload);
+    await app.close();
+
+    expect(failed.statusCode).toBe(503);
+    expect(retried.statusCode).toBe(200);
+    expect(gateway.sentAudio).toHaveLength(1);
+    expect(gateway.uploadedAudio).toHaveLength(1);
+    expect(gateway.sent).toHaveLength(1);
+    expect(gateway.sentLists).toHaveLength(1);
+  });
+
+  it("falls back to typed preference choices when the list cannot be sent", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    gateway.failuresRemaining = 1;
+    const { app } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+
+    const response = await injectWebhook(
+      app,
+      textPayload("message-settings-fallback", "SETTINGS"),
+    );
+    await app.close();
+
+    expect(response.statusCode).toBe(200);
+    expect(gateway.sentLists).toHaveLength(0);
+    expect(gateway.sent[0]?.body).toContain("AUTO, TEXT, VOICE, or BOTH");
+  });
+
+  it("falls back to the full text answer when speech synthesis fails", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const synthesizer = new FakeSpeechSynthesizer();
+    synthesizer.failure = new Error("TTS unavailable");
+    const { app } = await buildApp(
+      whatsAppConfig({
+        VOICE_REPLIES_ENABLED: "true",
+        AZURE_TTS_ENDPOINT: "https://tts.example",
+        AZURE_SPEECH_KEY: "speech-key",
+      }),
+      {
+        whatsAppGateway: gateway,
+        speechTranscriber: new FakeSpeechTranscriber(),
+        speechSynthesizer: synthesizer,
+      },
+    );
+
+    const response = await injectWebhook(
+      app,
+      audioPayload("message-tts-fallback"),
+    );
+    await app.close();
+
+    expect(response.statusCode).toBe(200);
+    expect(gateway.sentAudio).toHaveLength(0);
+    expect(gateway.sent[0]?.body).toContain("Sources:");
+  });
+
   it("acknowledges delivery statuses without sending a message", async () => {
     const gateway = new FakeWhatsAppGateway();
     const { app } = await buildApp(whatsAppConfig(), {
@@ -610,6 +922,22 @@ function audioPayload(messageId: string) {
       id: "media-1",
       mime_type: "audio/ogg",
       voice: true,
+    },
+  });
+}
+
+function interactivePayload(messageId: string, selectionId: string) {
+  return messagePayload({
+    from: "254700000001",
+    id: messageId,
+    timestamp: "1789460000",
+    type: "interactive",
+    interactive: {
+      type: "list_reply",
+      list_reply: {
+        id: selectionId,
+        title: "Text",
+      },
     },
   });
 }

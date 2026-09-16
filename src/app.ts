@@ -12,6 +12,7 @@ import type { LanguageModelGateway } from "./gateways/language-model.js";
 import { MockLanguageModelGateway } from "./gateways/mock-language-model.js";
 import { MockSpeechTranscriber } from "./gateways/mock-speech-transcriber.js";
 import type { SpeechTranscriber } from "./gateways/speech-transcriber.js";
+import type { SpeechSynthesizer } from "./gateways/speech-synthesizer.js";
 import type { WhatsAppGateway } from "./gateways/whatsapp.js";
 import { ConversationStore } from "./infrastructure/database.js";
 import { ManualRepository } from "./knowledge/manual-repository.js";
@@ -33,6 +34,7 @@ export interface AppDependencies {
   store?: ConversationStore;
   languageModel?: LanguageModelGateway;
   speechTranscriber?: SpeechTranscriber;
+  speechSynthesizer?: SpeechSynthesizer;
   whatsAppGateway?: WhatsAppGateway;
 }
 
@@ -42,6 +44,7 @@ export interface BuiltApp {
   store: ConversationStore;
   assistant: SupportAssistant;
   speechTranscriber: SpeechTranscriber;
+  speechSynthesizer: SpeechSynthesizer | undefined;
   whatsAppGateway: WhatsAppGateway | undefined;
 }
 
@@ -69,6 +72,12 @@ export async function buildApp(
       ? new (await import("./gateways/azure-speech-transcriber.js"))
           .AzureSpeechTranscriber(config)
       : new MockSpeechTranscriber());
+  const speechSynthesizer =
+    dependencies.speechSynthesizer ??
+    (config.VOICE_REPLIES_ENABLED
+      ? new (await import("./gateways/azure-speech-synthesizer.js"))
+          .AzureSpeechSynthesizer(config)
+      : undefined);
   const whatsAppGateway =
     dependencies.whatsAppGateway ??
     (config.WHATSAPP_ENABLED
@@ -126,6 +135,7 @@ export async function buildApp(
       manualVersion: manual.version,
       llmProvider: config.LLM_PROVIDER,
       speechProvider: config.SPEECH_PROVIDER,
+      voiceRepliesEnabled: config.VOICE_REPLIES_ENABLED,
       whatsAppEnabled: config.WHATSAPP_ENABLED,
     });
   });
@@ -230,6 +240,7 @@ export async function buildApp(
       assistant,
       store,
       speechTranscriber,
+      speechSynthesizer,
       gateway: whatsAppGateway,
       rawBodyFor: (request) => rawJsonBodies.get(request),
     });
@@ -254,6 +265,7 @@ export async function buildApp(
     store,
     assistant,
     speechTranscriber,
+    speechSynthesizer,
     whatsAppGateway,
   };
 }

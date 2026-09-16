@@ -51,11 +51,10 @@ describe("MetaWhatsAppGateway", () => {
     expect(requests[0]?.url).toBe(
       "https://graph.facebook.com/v26.0/phone-id/messages",
     );
-    const body = JSON.parse(String(requests[0]?.init?.body)) as Record<
-      string,
-      unknown
-    >;
-    expect(body).toMatchObject({
+    const textRequest = JSON.parse(
+      String(requests[0]?.init?.body),
+    ) as Record<string, unknown>;
+    expect(textRequest).toMatchObject({
       messaging_product: "whatsapp",
       to: "254700000001",
       context: { message_id: "wamid.inbound" },
@@ -65,6 +64,105 @@ describe("MetaWhatsAppGateway", () => {
       "Bearer access-token",
     );
   });
+
+  it("uploads OGG audio to the phone-number media endpoint", async () => {
+      let request: { url: string; init?: RequestInit } | undefined;
+      const fakeFetch = async (
+        input: RequestInfo | URL,
+        init?: RequestInit,
+      ): Promise<Response> => {
+        request = init
+          ? { url: String(input), init }
+          : { url: String(input) };
+        return Response.json({ id: "media-outbound" });
+      };
+      const gateway = new MetaWhatsAppGateway(config(), fakeFetch);
+
+      const result = await gateway.uploadAudio({
+        bytes: new Uint8Array([1, 2, 3]),
+        mimeType: "audio/ogg",
+        fileName: "answer.ogg",
+      });
+
+      expect(result).toEqual({ mediaId: "media-outbound" });
+      expect(request?.url).toBe(
+        "https://graph.facebook.com/v26.0/phone-id/media",
+      );
+      expect(request?.init?.method).toBe("POST");
+      expect(request?.init?.body).toBeInstanceOf(FormData);
+      const form = request?.init?.body as FormData;
+      expect(form.get("messaging_product")).toBe("whatsapp");
+      expect(form.get("file")).toBeInstanceOf(Blob);
+    });
+
+  it("sends an uploaded media ID as a WhatsApp voice message", async () => {
+      let requestBody: Record<string, unknown> | undefined;
+      const fakeFetch = async (
+        _input: RequestInfo | URL,
+        init?: RequestInit,
+      ): Promise<Response> => {
+        requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        return Response.json({ messages: [{ id: "wamid.audio" }] });
+      };
+      const gateway = new MetaWhatsAppGateway(config(), fakeFetch);
+
+      await gateway.sendAudio({
+        to: "254700000001",
+        mediaId: "media-outbound",
+        replyToMessageId: "wamid.inbound",
+      });
+
+      expect(requestBody).toMatchObject({
+        type: "audio",
+        to: "254700000001",
+        audio: { id: "media-outbound", voice: true },
+        context: { message_id: "wamid.inbound" },
+      });
+    });
+
+  it("sends reusable interactive list messages", async () => {
+      let requestBody: Record<string, unknown> | undefined;
+      const fakeFetch = async (
+        _input: RequestInfo | URL,
+        init?: RequestInit,
+      ): Promise<Response> => {
+        requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        return Response.json({ messages: [{ id: "wamid.list" }] });
+      };
+      const gateway = new MetaWhatsAppGateway(config(), fakeFetch);
+
+      await gateway.sendList({
+        to: "254700000001",
+        list: {
+          body: "Choose a reply format",
+          button: "Choose",
+          sections: [
+            {
+              title: "Formats",
+              rows: [{ id: "preference:en:auto", title: "Automatic" }],
+            },
+          ],
+        },
+      });
+
+      expect(requestBody).toMatchObject({
+        type: "interactive",
+        interactive: {
+          type: "list",
+          body: { text: "Choose a reply format" },
+          action: {
+            button: "Choose",
+            sections: [
+              {
+                rows: [
+                  { id: "preference:en:auto", title: "Automatic" },
+                ],
+              },
+            ],
+          },
+        },
+      });
+    });
 
   it("retrieves, downloads, and verifies media", async () => {
     const bytes = new TextEncoder().encode("voice-note");
