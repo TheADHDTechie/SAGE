@@ -17,6 +17,14 @@ export type WhatsAppDeliveryStep =
       kind: "list";
       language: "en" | "sw";
       currentMode: ReplyMode;
+    })
+  | (DeliveryStepState & {
+      kind: "topic_shortcuts";
+      language: "en" | "sw";
+    })
+  | (DeliveryStepState & {
+      kind: "topic_list";
+      language: "en" | "sw";
     });
 
 export interface WhatsAppDeliveryPlan {

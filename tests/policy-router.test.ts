@@ -38,9 +38,36 @@ describe("policy routing", () => {
     expect(decision.language).toBe(language);
   });
 
+  it.each([
+    ["Thank you for your help", "en", "gratitude"],
+    ["Bye for now", "en", "farewell"],
+    ["Asante kwa msaada", "sw", "gratitude"],
+    ["Kwaheri", "sw", "farewell"],
+  ] as const)(
+    "recognizes the closing message %s",
+    (message, language, closingStyle) => {
+      const decision = routeByPolicy(message);
+
+      expect(decision.action).toBe("respond");
+      if (decision.action === "respond") {
+        expect(decision.socialIntent).toBe("closing");
+        expect(decision.closingStyle).toBe(closingStyle);
+        expect(decision.language).toBe(language);
+      }
+    },
+  );
+
   it("continues when a greeting includes a manual question", () => {
     expect(
       routeByPolicy("Hi, how should I organize library books?").action,
+    ).toBe("continue");
+  });
+
+  it("continues when gratitude includes a manual question", () => {
+    expect(
+      routeByPolicy(
+        "Thank you, but how should I record borrowed books?",
+      ).action,
     ).toBe("continue");
   });
 

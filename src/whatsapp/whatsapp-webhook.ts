@@ -13,6 +13,14 @@ import type {
   WhatsAppDeliveryPlan,
   WhatsAppDeliveryStep,
 } from "./delivery-types.js";
+import {
+  parseTopicMenuCommand,
+  topicList,
+  topicListSelection,
+  topicMenuTextFallback,
+  topicQuestion,
+  topicShortcutMessage,
+} from "./topic-menu.js";
 
 const verificationQuerySchema = z.object({
   "hub.mode": z.literal("subscribe"),
@@ -405,10 +413,30 @@ async function processWhatsAppMessage(input: {
         store.completeWhatsAppWithoutResponse(message.id);
         return;
       }
-      const selection = preferenceSelection(message);
-      if (!selection) {
+      const selectionId = interactiveSelectionId(message);
+      const preference = preferenceSelection(selectionId);
+      if (preference) {
+        store.setReplyPreference(message.from, preference.mode);
+        const response = preferenceConfirmation(
+          preference.mode,
+          preference.language,
+        );
+        store.prepareWhatsAppDelivery(message.id, response);
+        await sendPreparedDelivery(message.id, message.from, store, gateway);
+        return;
+      }
+      const topicMenuLanguage = topicListSelection(selectionId ?? "");
+      if (topicMenuLanguage) {
+        store.prepareWhatsAppDeliveryPlan(message.id, {
+          steps: [{ kind: "topic_list", language: topicMenuLanguage }],
+        });
+        await sendPreparedDelivery(message.id, message.from, store, gateway);
+        return;
+      }
+      const selectedTopic = topicQuestion(selectionId ?? "");
+      if (!selectedTopic) {
         const response =
-          "I could not read that selection. Send SETTINGS to choose how SAGE replies.";
+          "I could not read that selection. Type your question directly, or send TOPICS to see the topic menu.";
         store.prepareWhatsAppDelivery(message.id, response);
         await sendPreparedDelivery(
           message.id,
@@ -418,14 +446,8 @@ async function processWhatsAppMessage(input: {
         );
         return;
       }
-      store.setReplyPreference(message.from, selection.mode);
-      const response = preferenceConfirmation(
-        selection.mode,
-        selection.language,
-      );
-      store.prepareWhatsAppDelivery(message.id, response);
-      await sendPreparedDelivery(message.id, message.from, store, gateway);
-      return;
+      text = selectedTopic.question;
+      inputType = "text";
     } else if (message.type === "audio" && message.audio?.id) {
       if (store.isHumanActiveForUser(message.from)) {
         store.completeWhatsAppWithoutResponse(message.id);
@@ -473,6 +495,19 @@ async function processWhatsAppMessage(input: {
         store,
         gateway,
       );
+      return;
+    }
+
+    const topicMenuLanguage = parseTopicMenuCommand(text);
+    if (topicMenuLanguage) {
+      if (store.isHumanActiveForUser(message.from)) {
+        store.completeWhatsAppWithoutResponse(message.id);
+        return;
+      }
+      store.prepareWhatsAppDeliveryPlan(message.id, {
+        steps: [{ kind: "topic_shortcuts", language: topicMenuLanguage }],
+      });
+      await sendPreparedDelivery(message.id, message.from, store, gateway);
       return;
     }
 
@@ -647,6 +682,50 @@ async function sendDeliveryStep(
       });
     }
   }
+  if (step.kind === "topic_shortcuts") {
+    try {
+      return await gateway.sendButtons({
+        to: recipient,
+        message: topicShortcutMessage(step.language),
+        replyToMessageId: inboundMessageId,
+      });
+    } catch (error) {
+      store.recordAuditEvent({
+        eventType: "whatsapp_interactive_failure",
+        details: {
+          messageId: inboundMessageId,
+          error: errorMessage(error),
+        },
+      });
+      return gateway.sendText({
+        to: recipient,
+        body: topicMenuTextFallback(step.language),
+        replyToMessageId: inboundMessageId,
+      });
+    }
+  }
+  if (step.kind === "topic_list") {
+    try {
+      return await gateway.sendList({
+        to: recipient,
+        list: topicList(step.language),
+        replyToMessageId: inboundMessageId,
+      });
+    } catch (error) {
+      store.recordAuditEvent({
+        eventType: "whatsapp_interactive_failure",
+        details: {
+          messageId: inboundMessageId,
+          error: errorMessage(error),
+        },
+      });
+      return gateway.sendText({
+        to: recipient,
+        body: topicMenuTextFallback(step.language),
+        replyToMessageId: inboundMessageId,
+      });
+    }
+  }
   return gateway.sendText({
     to: recipient,
     body: step.body,
@@ -676,6 +755,16 @@ async function createResponsePlan(input: {
   } = input;
   if (response.status !== "answered") {
     return { steps: [{ kind: "text", body: responseText }] };
+  }
+  if (response.presentation === "topic_shortcuts") {
+    return {
+      steps: [
+        {
+          kind: "topic_shortcuts",
+          language: response.language === "sw" ? "sw" : "en",
+        },
+      ],
+    };
   }
 
   const preference = store.replyPreference(recipient);
@@ -784,13 +873,21 @@ function spokenAnswer(answer: string, language: string) {
   };
 }
 
-function preferenceSelection(
+function interactiveSelectionId(
   message: z.infer<typeof webhookMessageSchema>,
-): { mode: ReplyMode; language: "en" | "sw" } | undefined {
-  const id =
+): string | undefined {
+  return (
     message.interactive?.list_reply?.id ??
-    message.interactive?.button_reply?.id;
-  const match = /^preference:(en|sw):(auto|text|voice|both)$/.exec(id ?? "");
+    message.interactive?.button_reply?.id
+  );
+}
+
+function preferenceSelection(
+  selectionId: string | undefined,
+): { mode: ReplyMode; language: "en" | "sw" } | undefined {
+  const match = /^preference:(en|sw):(auto|text|voice|both)$/.exec(
+    selectionId ?? "",
+  );
   return match
     ? {
         language: match[1] as "en" | "sw",

@@ -16,7 +16,8 @@ with citations sent separately as text.
 The initial prototype uses:
 
 - Meta WhatsApp Cloud API for messaging.
-- Interactive WhatsApp lists and typed commands for reply-format preferences.
+- Interactive WhatsApp buttons and lists for optional topic shortcuts and reply-format
+  preferences, with typed-command fallbacks.
 - A Node.js and TypeScript API service.
 - Azure Container Apps with one always-running replica and managed identity.
 - GPT-5.6 Luna deployed in Microsoft Foundry for language understanding and grounded
@@ -39,7 +40,7 @@ conversation behavior.
 
 The prototype must:
 
-1. Receive WhatsApp text, voice, and interactive-list messages.
+1. Receive WhatsApp text, voice, and interactive button/list messages.
 2. Answer questions using only the approved SAL manual.
 3. Support English, Kiswahili, and mixed-language enquiries.
 4. Respond in the user's language using text, voice, or both according to preference.
@@ -52,6 +53,10 @@ The prototype must:
 10. Keep the Azure model deployment replaceable through configuration.
 11. Persist multi-step outbound delivery state so partial Meta failures can be retried
     without regenerating the answer or re-uploading completed audio.
+12. Offer optional common-topic shortcuts after standalone greetings while making it
+    clear that users can type or speak any supported question.
+13. Recognize standalone gratitude and farewell messages without invoking the LLM or
+    preventing the user from returning later.
 
 ## 3. Constraints and assumptions
 
@@ -233,7 +238,9 @@ Initial deterministic rules:
 - Stop or opt-out request.
 - Conversation already assigned to a human.
 - Empty or unsupported media.
-- Greeting and thanks responses that do not require the manual or an LLM call.
+- Standalone greeting responses with optional topic shortcuts.
+- Standalone gratitude and farewell responses that do not require the manual or an
+  LLM call.
 - Reply-preference commands and interactive selections.
 - Audio exceeding configured duration or size.
 - Repeated processing of the same provider message ID.
@@ -320,6 +327,28 @@ survey logic to the LLM.
 The interactive list is offered once after the first successful automatic voice
 reply. `SETTINGS`, `MIPANGILIO`, and typed preference commands reopen or update the
 selection. If Meta rejects the list, SAGE sends typed choices instead.
+
+Standalone greetings use reply buttons with namespaced IDs such as:
+
+```text
+topic:en:arrange-books
+topic:sw:start-library
+menu:en:topics
+```
+
+The welcome text explicitly states that shortcuts are optional and users may type any
+question or send a voice note. Two buttons open common topics directly, while the
+third opens a seven-item topic list. `MENU`, `TOPICS`, `MADA`, and `MSAADA` reopen the
+shortcuts. Selecting a topic maps the ID to a localized canonical question and sends
+that question through the normal grounding, citation, safety, preference, and
+handoff flow. If Meta rejects an interactive topic message, SAGE sends a text fallback
+that preserves the invitation to ask any question.
+
+Greeting and closing classification is deterministic. Only standalone social phrases
+match; a greeting or expression of thanks that also contains a question continues to
+the normal manual-answer flow. Standalone gratitude receives a warm closing without
+closing the stored conversation. If an immediate farewell follows that response,
+SAGE sends only a brief localized goodbye rather than repeating the full closing.
 
 ### 6.7 Knowledge repository
 
@@ -596,6 +625,25 @@ sequenceDiagram
 
 Typed `AUTO`, `TEXT`, `VOICE`, `BOTH`, `OTOMATIKI`, `MAANDISHI`, `SAUTI`, and
 `ZOTE` commands follow the same deterministic path.
+
+#### Greeting topic shortcuts
+
+Standalone `Hi`, `Hello`, `Good morning`, `Jambo`, `Habari`, and similar greetings
+return localized reply buttons. The message says that the buttons are optional and
+that the user may type any question or send a voice note. A greeting containing a
+question bypasses the menu and answers the question directly.
+
+The first two buttons map to canonical manual questions. `More topics` or `Mada zaidi`
+opens the complete topic list. Interactive IDs are validated by namespace before any
+canonical question is created.
+
+#### Conversation closing
+
+Standalone gratitude or farewell phrases return a localized closing response without
+an LLM call, topic menu, handoff, opt-out, or permanent conversation closure. If a
+farewell immediately follows a full closing response, only a brief `Goodbye!` or
+`Kwaheri!` is sent. A later substantive message is processed normally. `STOP` remains
+the separate command that formally closes the active conversation.
 
 ### 7.4 Human handoff
 

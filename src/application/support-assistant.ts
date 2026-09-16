@@ -6,7 +6,10 @@ import type {
 import type { LanguageModelGateway } from "../gateways/language-model.js";
 import type { ConversationStore } from "../infrastructure/database.js";
 import type { ManualRepository } from "../knowledge/manual-repository.js";
-import { routeByPolicy } from "../policy/policy-router.js";
+import {
+  isFullClosingResponse,
+  routeByPolicy,
+} from "../policy/policy-router.js";
 
 const humanActiveResponses: Record<"en" | "sw", string> = {
   en: "A SAL staff member is handling this conversation and can reply here.",
@@ -94,17 +97,27 @@ export class SupportAssistant {
     }
 
     if (policy.action === "respond") {
+      const response =
+        policy.socialIntent === "closing" &&
+        policy.closingStyle === "farewell" &&
+        policy.briefResponse &&
+        this.previousAssistantMessageWasClosing(inbound.conversationId)
+          ? policy.briefResponse
+          : policy.response;
       this.store.recordAssistantMessage({
         conversationId: inbound.conversationId,
-        content: policy.response,
+        content: response,
         language: policy.language,
       });
       return {
         status: "answered",
         conversationId: inbound.conversationId,
         language: policy.language,
-        answer: policy.response,
+        answer: response,
         citations: [],
+        ...(policy.socialIntent === "greeting"
+          ? { presentation: "topic_shortcuts" as const }
+          : {}),
       };
     }
 
@@ -199,6 +212,17 @@ export class SupportAssistant {
       answer: handoffResponse,
       reason,
     };
+  }
+
+  private previousAssistantMessageWasClosing(conversationId: string) {
+    const recentMessages = this.store.recentMessages(conversationId);
+    const previousMessage = recentMessages.findLast(
+      (message) => message.senderType === "assistant",
+    );
+    return (
+      previousMessage !== undefined &&
+      isFullClosingResponse(previousMessage.content)
+    );
   }
 }
 

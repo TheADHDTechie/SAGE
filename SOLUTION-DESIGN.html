@@ -252,7 +252,8 @@ with citations sent separately as text.</p>
 <p>The initial prototype uses:</p>
 <ul>
 <li>Meta WhatsApp Cloud API for messaging.</li>
-<li>Interactive WhatsApp lists and typed commands for reply-format preferences.</li>
+<li>Interactive WhatsApp buttons and lists for optional topic shortcuts and reply-format
+preferences, with typed-command fallbacks.</li>
 <li>A Node.js and TypeScript API service.</li>
 <li>Azure Container Apps with one always-running replica and managed identity.</li>
 <li>GPT-5.6 Luna deployed in Microsoft Foundry for language understanding and grounded
@@ -273,7 +274,7 @@ conversation behavior.</p>
 <h2>2. Goals</h2>
 <p>The prototype must:</p>
 <ol>
-<li>Receive WhatsApp text, voice, and interactive-list messages.</li>
+<li>Receive WhatsApp text, voice, and interactive button/list messages.</li>
 <li>Answer questions using only the approved SAL manual.</li>
 <li>Support English, Kiswahili, and mixed-language enquiries.</li>
 <li>Respond in the user&#39;s language using text, voice, or both according to preference.</li>
@@ -286,6 +287,10 @@ the API service.</li>
 <li>Keep the Azure model deployment replaceable through configuration.</li>
 <li>Persist multi-step outbound delivery state so partial Meta failures can be retried
 without regenerating the answer or re-uploading completed audio.</li>
+<li>Offer optional common-topic shortcuts after standalone greetings while making it
+clear that users can type or speak any supported question.</li>
+<li>Recognize standalone gratitude and farewell messages without invoking the LLM or
+preventing the user from returning later.</li>
 </ol>
 <h2>3. Constraints and assumptions</h2>
 <ul>
@@ -366,7 +371,7 @@ again, or resending already checkpointed steps.</p>
 <h2>5. High-level architecture</h2>
 <div class="diagram diagram-1" role="img" aria-label="Architecture diagram 1"><svg class="architecture-svg large-format-architecture" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1500" role="img" aria-labelledby="title description">
   <title id="title">SAGE WhatsApp multimodal support architecture</title>
-  <desc id="description">End-to-end architecture for WhatsApp text, voice and interactive preferences through SAGE, Azure Speech transcription and synthesis, GPT-5.6 Luna, local manual and SQLite state, Meta media upload, and human handoff.</desc>
+  <desc id="description">End-to-end architecture for WhatsApp text, voice, topic shortcuts and interactive preferences through SAGE, Azure Speech transcription and synthesis, GPT-5.6 Luna, local manual and SQLite state, Meta media upload, and human handoff.</desc>
   <defs>
     <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#f3fff8"/>
@@ -422,14 +427,14 @@ again, or resending already checkpointed steps.</p>
 
   <rect class="node" x="160" y="112" width="360" height="94" rx="18" fill="url(#whatsapp)"/>
   <text x="340" y="145" text-anchor="middle" class="title">WhatsApp user</text>
-  <text x="340" y="171" text-anchor="middle" class="detail">Text, voice note or preference selection</text>
+  <text x="340" y="171" text-anchor="middle" class="detail">Text, voice note, topic or preference selection</text>
 
   <path class="edge" d="M520 159H685"/>
   <path class="return-edge" d="M685 188H520"/>
 
   <rect class="node" x="690" y="112" width="530" height="94" rx="18" fill="url(#whatsapp)"/>
   <text x="955" y="145" text-anchor="middle" class="title">Meta WhatsApp Cloud API</text>
-  <text x="955" y="171" text-anchor="middle" class="detail">Signed webhooks, media download/upload, text, audio and interactive lists</text>
+  <text x="955" y="171" text-anchor="middle" class="detail">Signed webhooks, media, text, audio, buttons and lists</text>
 
   <text x="48" y="345" class="band-title">SAGE APPLICATION - AZURE CONTAINER APPS</text>
   <rect x="35" y="362" width="1330" height="785" rx="22" fill="#f7fcff" stroke="#75acc3" stroke-width="2"/>
@@ -446,7 +451,7 @@ again, or resending already checkpointed steps.</p>
 
   <rect class="node" x="435" y="527" width="530" height="88" rx="18" fill="url(#service)"/>
   <text x="700" y="560" text-anchor="middle" class="title">Policy, conversation and preference router</text>
-  <text x="700" y="586" text-anchor="middle" class="detail">Safety, greetings, handoff, Automatic / Text / Voice / Both</text>
+  <text x="700" y="586" text-anchor="middle" class="detail">Safety, greetings, closings, topics, handoff and reply modes</text>
 
   <rect class="node" x="1025" y="515" width="275" height="106" rx="18" fill="url(#local)"/>
   <text x="1162" y="549" text-anchor="middle" class="title">SQLite</text>
@@ -510,7 +515,7 @@ again, or resending already checkpointed steps.</p>
   <path class="edge" d="M490 1281H555"/>
   <rect class="node" x="560" y="1235" width="350" height="92" rx="18" fill="url(#delivery)"/>
   <text x="735" y="1268" text-anchor="middle" class="title">Persisted delivery executor</text>
-  <text x="735" y="1294" text-anchor="middle" class="detail">Audio, sources, full text and list</text>
+  <text x="735" y="1294" text-anchor="middle" class="detail">Audio, text, buttons and lists</text>
   <text x="735" y="1316" text-anchor="middle" class="detail">Resume from first incomplete step</text>
 
   <path class="edge" d="M910 1281H1030"/>
@@ -582,7 +587,9 @@ interface MessagingProvider {
 <li>Stop or opt-out request.</li>
 <li>Conversation already assigned to a human.</li>
 <li>Empty or unsupported media.</li>
-<li>Greeting and thanks responses that do not require the manual or an LLM call.</li>
+<li>Standalone greeting responses with optional topic shortcuts.</li>
+<li>Standalone gratitude and farewell responses that do not require the manual or an
+LLM call.</li>
 <li>Reply-preference commands and interactive selections.</li>
 <li>Audio exceeding configured duration or size.</li>
 <li>Repeated processing of the same provider message ID.</li>
@@ -652,6 +659,23 @@ survey logic to the LLM.</p>
 <p>The interactive list is offered once after the first successful automatic voice
 reply. <code>SETTINGS</code>, <code>MIPANGILIO</code>, and typed preference commands reopen or update the
 selection. If Meta rejects the list, SAGE sends typed choices instead.</p>
+<p>Standalone greetings use reply buttons with namespaced IDs such as:</p>
+<pre><code class="language-text">topic:en:arrange-books
+topic:sw:start-library
+menu:en:topics
+</code></pre>
+<p>The welcome text explicitly states that shortcuts are optional and users may type any
+question or send a voice note. Two buttons open common topics directly, while the
+third opens a seven-item topic list. <code>MENU</code>, <code>TOPICS</code>, <code>MADA</code>, and <code>MSAADA</code> reopen the
+shortcuts. Selecting a topic maps the ID to a localized canonical question and sends
+that question through the normal grounding, citation, safety, preference, and
+handoff flow. If Meta rejects an interactive topic message, SAGE sends a text fallback
+that preserves the invitation to ask any question.</p>
+<p>Greeting and closing classification is deterministic. Only standalone social phrases
+match; a greeting or expression of thanks that also contains a question continues to
+the normal manual-answer flow. Standalone gratitude receives a warm closing without
+closing the stored conversation. If an immediate farewell follows that response,
+SAGE sends only a brief localized goodbye rather than repeating the full closing.</p>
 <h3>6.7 Knowledge repository</h3>
 <p>The authoritative source is:</p>
 <pre><code class="language-text">knowledge-base\sal\data\sal-guide-chunks.jsonl
@@ -803,6 +827,20 @@ but the inbox must not be publicly accessible.</p>
 <div class="diagram diagram-4" role="img" aria-label="Architecture diagram 4"><svg class="architecture-svg sequence-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 652" role="img" aria-label="Sequence diagram"><defs><marker id="sequence-arrow-4" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4 0 8z" fill="#185b70"/></marker><filter id="sequence-shadow-4" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#123c50" flood-opacity=".18"/></filter></defs><rect x="-5" y="20" width="190" height="52" rx="12" fill="#087f73" stroke="#075a52" stroke-width="2.5" filter="url(#sequence-shadow-4)"/><text x="90" y="52" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial" font-size="14" font-weight="800">User</text><line x1="90" y1="72" x2="90" y2="590" stroke="#6c98a5" stroke-width="2" stroke-dasharray="7 7"/><rect x="335" y="20" width="190" height="52" rx="12" fill="#087f73" stroke="#075a52" stroke-width="2.5" filter="url(#sequence-shadow-4)"/><text x="430" y="52" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial" font-size="14" font-weight="800">WhatsApp</text><line x1="430" y1="72" x2="430" y2="590" stroke="#6c98a5" stroke-width="2" stroke-dasharray="7 7"/><rect x="675" y="20" width="190" height="52" rx="12" fill="#087f73" stroke="#075a52" stroke-width="2.5" filter="url(#sequence-shadow-4)"/><text x="770" y="52" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial" font-size="14" font-weight="800">API service</text><line x1="770" y1="72" x2="770" y2="590" stroke="#6c98a5" stroke-width="2" stroke-dasharray="7 7"/><rect x="1015" y="20" width="190" height="52" rx="12" fill="#087f73" stroke="#075a52" stroke-width="2.5" filter="url(#sequence-shadow-4)"/><text x="1110" y="52" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial" font-size="14" font-weight="800">SQLite</text><line x1="1110" y1="72" x2="1110" y2="590" stroke="#6c98a5" stroke-width="2" stroke-dasharray="7 7"/><line x1="90" y1="161" x2="430" y2="161" stroke="#185b70" stroke-width="2.4"  marker-end="url(#sequence-arrow-4)"/><text x="260" y="137" text-anchor="middle" fill="#14394a" font-family="Segoe UI,Arial" font-size="13" font-weight="650">Select Automatic, Text, Voice or</text><text x="260" y="154" text-anchor="middle" fill="#14394a" font-family="Segoe UI,Arial" font-size="13" font-weight="650">Both</text><line x1="430" y1="231" x2="770" y2="231" stroke="#185b70" stroke-width="2.4"  marker-end="url(#sequence-arrow-4)"/><text x="600" y="207" text-anchor="middle" fill="#14394a" font-family="Segoe UI,Arial" font-size="13" font-weight="650">Structured interactive selection</text><text x="600" y="224" text-anchor="middle" fill="#14394a" font-family="Segoe UI,Arial" font-size="13" font-weight="650">ID</text><path d="M770 277h62v34h-62" fill="none" stroke="#185b70" stroke-width="2.4" marker-end="url(#sequence-arrow-4)"/><text x="842" y="277" text-anchor="middle" fill="#14394a" font-family="Segoe UI,Arial" font-size="13" font-weight="650">Validate namespaced preference ID</text><line x1="770" y1="371" x2="1110" y2="371" stroke="#185b70" stroke-width="2.4"  marker-end="url(#sequence-arrow-4)"/><text x="940" y="347" text-anchor="middle" fill="#14394a" font-family="Segoe UI,Arial" font-size="13" font-weight="650">Save contact reply mode</text><line x1="770" y1="441" x2="430" y2="441" stroke="#185b70" stroke-width="2.4"  marker-end="url(#sequence-arrow-4)"/><text x="600" y="417" text-anchor="middle" fill="#14394a" font-family="Segoe UI,Arial" font-size="13" font-weight="650">Send localized confirmation</text><line x1="430" y1="511" x2="90" y2="511" stroke="#185b70" stroke-width="2.4"  marker-end="url(#sequence-arrow-4)"/><text x="260" y="487" text-anchor="middle" fill="#14394a" font-family="Segoe UI,Arial" font-size="13" font-weight="650">Preference updated</text><rect x="-5" y="590" width="190" height="42" rx="10" fill="#087f73" stroke="#075a52" stroke-width="2"/><text x="90" y="617" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial" font-size="13" font-weight="800">User</text><rect x="335" y="590" width="190" height="42" rx="10" fill="#087f73" stroke="#075a52" stroke-width="2"/><text x="430" y="617" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial" font-size="13" font-weight="800">WhatsApp</text><rect x="675" y="590" width="190" height="42" rx="10" fill="#087f73" stroke="#075a52" stroke-width="2"/><text x="770" y="617" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial" font-size="13" font-weight="800">API service</text><rect x="1015" y="590" width="190" height="42" rx="10" fill="#087f73" stroke="#075a52" stroke-width="2"/><text x="1110" y="617" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial" font-size="13" font-weight="800">SQLite</text></svg></div>
 <p>Typed <code>AUTO</code>, <code>TEXT</code>, <code>VOICE</code>, <code>BOTH</code>, <code>OTOMATIKI</code>, <code>MAANDISHI</code>, <code>SAUTI</code>, and
 <code>ZOTE</code> commands follow the same deterministic path.</p>
+<h4>Greeting topic shortcuts</h4>
+<p>Standalone <code>Hi</code>, <code>Hello</code>, <code>Good morning</code>, <code>Jambo</code>, <code>Habari</code>, and similar greetings
+return localized reply buttons. The message says that the buttons are optional and
+that the user may type any question or send a voice note. A greeting containing a
+question bypasses the menu and answers the question directly.</p>
+<p>The first two buttons map to canonical manual questions. <code>More topics</code> or <code>Mada zaidi</code>
+opens the complete topic list. Interactive IDs are validated by namespace before any
+canonical question is created.</p>
+<h4>Conversation closing</h4>
+<p>Standalone gratitude or farewell phrases return a localized closing response without
+an LLM call, topic menu, handoff, opt-out, or permanent conversation closure. If a
+farewell immediately follows a full closing response, only a brief <code>Goodbye!</code> or
+<code>Kwaheri!</code> is sent. A later substantive message is processed normally. <code>STOP</code> remains
+the separate command that formally closes the active conversation.</p>
 <h3>7.4 Human handoff</h3>
 <p>Triggers include:</p>
 <ul>

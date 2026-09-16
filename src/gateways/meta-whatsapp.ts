@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { AppConfig } from "../config.js";
 import type {
   WhatsAppGateway,
+  WhatsAppButtonMessage,
   WhatsAppListMessage,
   WhatsAppMedia,
   WhatsAppSendResult,
@@ -226,6 +227,33 @@ export class MetaWhatsAppGateway implements WhatsAppGateway {
       },
       input.replyToMessageId,
       "send WhatsApp list message",
+    );
+  }
+
+  async sendButtons(input: {
+    to: string;
+    message: WhatsAppButtonMessage;
+    replyToMessageId?: string;
+  }): Promise<WhatsAppSendResult> {
+    return this.sendMessage(
+      {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: input.to,
+        type: "interactive",
+        interactive: {
+          type: "button",
+          body: { text: input.message.body },
+          action: {
+            buttons: input.message.buttons.map((button) => ({
+              type: "reply",
+              reply: button,
+            })),
+          },
+        },
+      },
+      input.replyToMessageId,
+      "send WhatsApp reply buttons",
     );
   }
 

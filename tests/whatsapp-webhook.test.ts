@@ -18,6 +18,7 @@ import type {
   SynthesizedSpeech,
 } from "../src/gateways/speech-synthesizer.js";
 import type {
+  WhatsAppButtonMessage,
   WhatsAppListMessage,
   WhatsAppGateway,
   WhatsAppMedia,
@@ -76,6 +77,11 @@ class FakeWhatsAppGateway implements WhatsAppGateway {
   readonly sentLists: Array<{
     to: string;
     list: WhatsAppListMessage;
+    replyToMessageId?: string;
+  }> = [];
+  readonly sentButtons: Array<{
+    to: string;
+    message: WhatsAppButtonMessage;
     replyToMessageId?: string;
   }> = [];
   sendAttempts = 0;
@@ -155,6 +161,24 @@ class FakeWhatsAppGateway implements WhatsAppGateway {
       throw new Error("Temporary Meta failure");
     }
     this.sentLists.push(input);
+    return { messageIds: [`outbound-${this.sendAttempts}`] };
+  }
+
+  async sendButtons(input: {
+    to: string;
+    message: WhatsAppButtonMessage;
+    replyToMessageId?: string;
+  }): Promise<WhatsAppSendResult> {
+    this.sendAttempts += 1;
+    if (
+      this.failuresRemaining > 0 ||
+      this.failOnAttempt === this.sendAttempts
+    ) {
+      this.failuresRemaining -= 1;
+      this.failOnAttempt = undefined;
+      throw new Error("Temporary Meta failure");
+    }
+    this.sentButtons.push(input);
     return { messageIds: [`outbound-${this.sendAttempts}`] };
   }
 }
@@ -505,6 +529,133 @@ describe("WhatsApp webhook", () => {
 
     expect(response.statusCode).toBe(200);
     expect(gateway.sent).toHaveLength(1);
+  });
+
+  it("shows optional topic shortcuts for a standalone greeting", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const { app } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+
+    const response = await injectWebhook(
+      app,
+      textPayload("message-greeting-menu", "Hello"),
+    );
+    await app.close();
+
+    expect(response.statusCode).toBe(200);
+    expect(gateway.sentButtons).toHaveLength(1);
+    expect(gateway.sentButtons[0]?.message.body).toContain(
+      "type any question",
+    );
+    expect(gateway.sentButtons[0]?.message.buttons).toEqual([
+      { id: "topic:en:arrange-books", title: "Arrange books" },
+      { id: "topic:en:start-library", title: "Start a library" },
+      { id: "menu:en:topics", title: "More topics" },
+    ]);
+    expect(gateway.sent).toHaveLength(0);
+  });
+
+  it("answers a greeting with a question without showing shortcuts", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const { app } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+
+    const response = await injectWebhook(
+      app,
+      textPayload(
+        "message-greeting-question",
+        "Hi, how should books be organized?",
+      ),
+    );
+    await app.close();
+
+    expect(response.statusCode).toBe(200);
+    expect(gateway.sentButtons).toHaveLength(0);
+    expect(gateway.sent[0]?.body).toContain("Organizing and Arranging Books");
+  });
+
+  it("opens the full topic list and answers a selected topic", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const { app } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+
+    await injectWebhook(
+      app,
+      interactivePayload("message-more-topics", "menu:en:topics"),
+    );
+    await injectWebhook(
+      app,
+      interactivePayload(
+        "message-arrange-topic",
+        "topic:en:arrange-books",
+      ),
+    );
+    await app.close();
+
+    expect(gateway.sentLists).toHaveLength(1);
+    expect(gateway.sentLists[0]?.list.body).toContain("type any question");
+    expect(gateway.sentLists[0]?.list.sections[0]?.rows).toHaveLength(7);
+    expect(gateway.sent[0]?.body).toContain("Sources:");
+  });
+
+  it("reopens topic shortcuts through a typed command", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const { app } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+
+    const response = await injectWebhook(
+      app,
+      textPayload("message-topics-command", "TOPICS"),
+    );
+    await app.close();
+
+    expect(response.statusCode).toBe(200);
+    expect(gateway.sentButtons).toHaveLength(1);
+    expect(gateway.sentButtons[0]?.message.buttons).toHaveLength(3);
+  });
+
+  it("falls back to text when topic buttons cannot be sent", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    gateway.failOnAttempt = 1;
+    const { app } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+
+    const response = await injectWebhook(
+      app,
+      textPayload("message-topic-fallback", "Hello"),
+    );
+    await app.close();
+
+    expect(response.statusCode).toBe(200);
+    expect(gateway.sentButtons).toHaveLength(0);
+    expect(gateway.sent[0]?.body).toContain("type any question");
+  });
+
+  it("uses a short farewell after a full WhatsApp closing response", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const { app } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+
+    await injectWebhook(
+      app,
+      textPayload("message-closing-thanks", "Thank you for your help"),
+    );
+    await injectWebhook(
+      app,
+      textPayload("message-closing-bye", "Bye"),
+    );
+    await app.close();
+
+    expect(gateway.sent).toHaveLength(2);
+    expect(gateway.sent[0]?.body).toContain("glad I could help");
+    expect(gateway.sent[1]?.body).toBe("Goodbye!");
+    expect(gateway.sentButtons).toHaveLength(0);
   });
 
   it("downloads and transcribes an inbound voice note", async () => {

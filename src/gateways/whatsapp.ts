@@ -20,6 +20,14 @@ export interface WhatsAppListMessage {
   }>;
 }
 
+export interface WhatsAppButtonMessage {
+  body: string;
+  buttons: Array<{
+    id: string;
+    title: string;
+  }>;
+}
+
 export interface WhatsAppGateway {
   downloadMedia(mediaId: string): Promise<WhatsAppMedia>;
   uploadAudio(input: {
@@ -41,6 +49,11 @@ export interface WhatsAppGateway {
   sendList(input: {
     to: string;
     list: WhatsAppListMessage;
+    replyToMessageId?: string;
+  }): Promise<WhatsAppSendResult>;
+  sendButtons(input: {
+    to: string;
+    message: WhatsAppButtonMessage;
     replyToMessageId?: string;
   }): Promise<WhatsAppSendResult>;
 }

@@ -2,7 +2,14 @@ import type { SupportedLanguage } from "../domain/types.js";
 
 export type PolicyDecision =
   | { action: "continue"; language: SupportedLanguage }
-  | { action: "respond"; language: SupportedLanguage; response: string }
+  | {
+      action: "respond";
+      language: SupportedLanguage;
+      response: string;
+      socialIntent: "greeting" | "closing";
+      closingStyle?: "gratitude" | "farewell";
+      briefResponse?: string;
+    }
   | { action: "handoff"; language: SupportedLanguage; reason: string; response: string }
   | { action: "resume"; language: SupportedLanguage; response: string }
   | { action: "close"; language: SupportedLanguage; response: string };
@@ -26,6 +33,8 @@ const kiswahiliSignals = [
   "mambo",
   "shikamoo",
   "asante",
+  "nashukuru",
+  "kwaheri",
 ];
 
 const humanPatterns = [
@@ -57,17 +66,37 @@ const obviousOutOfScopePatterns = [
   /\b(sell me a mobile phone)\b/i,
 ];
 
-const socialPatterns = [
+const greetingPatterns = [
   /^(?:(?:hi|hello|hey)(?:\s+there|\s+sage)?|good\s+(?:morning|afternoon|evening)|greetings)[!.]*$/i,
-  /^(?:thank\s+you|thanks)(?:\s+(?:very\s+much|a\s+lot))?[!.]*$/i,
   /^(?:jambo|hujambo|mambo|shikamoo|habari)(?:\s+(?:yako|zako|sage|mwalimu))?[!.]*$/i,
   /^habari\s+za\s+(?:asubuhi|mchana|jioni)[!.]*$/i,
-  /^asante(?:\s+sana)?[!.]*$/i,
 ];
 
-const socialResponses: Record<"en" | "sw", string> = {
-  en: "Hello! I'm SAGE, the Start A Library support assistant. I can help with questions about setting up and running a school library. What would you like help with?",
-  sw: "Habari! Mimi ni SAGE, msaidizi wa Start A Library. Ninaweza kusaidia kuhusu kuanzisha na kuendesha maktaba ya shule. Ungependa kusaidiwa na nini?",
+const gratitudePatterns = [
+  /^(?:thank\s+you|thanks)(?:\s+(?:so\s+much|very\s+much|a\s+lot|for\s+(?:your\s+)?help|for\s+helping(?:\s+me)?))?[!.]*$/i,
+  /^(?:that(?:'s| is)\s+all|that\s+will\s+be\s+all)[!.]*$/i,
+  /^(?:asante)(?:\s+(?:sana|kwa\s+(?:msaada|kunisaidia)))?[!.]*$/i,
+  /^(?:nashukuru)(?:\s+kwa\s+(?:msaada|kunisaidia))?[!.]*$/i,
+];
+
+const farewellPatterns = [
+  /^(?:bye|goodbye|bye\s+for\s+now|see\s+you|see\s+you\s+later)[!.]*$/i,
+  /^(?:kwaheri|tutaonana)[!.]*$/i,
+];
+
+const greetingResponses: Record<"en" | "sw", string> = {
+  en: "Hello! I'm SAGE. You can type any question or send a voice note about your school library. You can also use the optional topic shortcuts.",
+  sw: "Habari! Mimi ni SAGE. Unaweza kuandika swali lolote au kutuma ujumbe wa sauti kuhusu maktaba ya shule. Pia unaweza kutumia mada za mkato.",
+};
+
+const closingResponses: Record<"en" | "sw", string> = {
+  en: "You're welcome! I'm glad I could help. You can message SAGE anytime if you have another school library question.",
+  sw: "Karibu! Nimefurahi kukusaidia. Unaweza kumtumia SAGE ujumbe wakati wowote ukiwa na swali lingine kuhusu maktaba ya shule.",
+};
+
+const briefFarewellResponses: Record<"en" | "sw", string> = {
+  en: "Goodbye!",
+  sw: "Kwaheri!",
 };
 
 export function routeByPolicy(message: string): PolicyDecision {
@@ -117,12 +146,36 @@ export function routeByPolicy(message: string): PolicyDecision {
     };
   }
 
-  if (socialPatterns.some((pattern) => pattern.test(message.trim()))) {
+  if (greetingPatterns.some((pattern) => pattern.test(message.trim()))) {
     const responseLanguage = language === "sw" || language === "mixed" ? "sw" : "en";
     return {
       action: "respond",
       language: responseLanguage,
-      response: socialResponses[responseLanguage],
+      response: greetingResponses[responseLanguage],
+      socialIntent: "greeting",
+    };
+  }
+
+  if (gratitudePatterns.some((pattern) => pattern.test(message.trim()))) {
+    const responseLanguage = language === "sw" || language === "mixed" ? "sw" : "en";
+    return {
+      action: "respond",
+      language: responseLanguage,
+      response: closingResponses[responseLanguage],
+      socialIntent: "closing",
+      closingStyle: "gratitude",
+    };
+  }
+
+  if (farewellPatterns.some((pattern) => pattern.test(message.trim()))) {
+    const responseLanguage = language === "sw" || language === "mixed" ? "sw" : "en";
+    return {
+      action: "respond",
+      language: responseLanguage,
+      response: closingResponses[responseLanguage],
+      socialIntent: "closing",
+      closingStyle: "farewell",
+      briefResponse: briefFarewellResponses[responseLanguage],
     };
   }
 
@@ -139,6 +192,10 @@ export function routeByPolicy(message: string): PolicyDecision {
   }
 
   return { action: "continue", language };
+}
+
+export function isFullClosingResponse(message: string) {
+  return Object.values(closingResponses).includes(message);
 }
 
 export function detectLanguage(message: string): SupportedLanguage {

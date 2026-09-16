@@ -110,8 +110,58 @@ describe("SupportAssistant", () => {
     if (result.status === "answered") {
       expect(result.language).toBe("sw");
       expect(result.citations).toEqual([]);
+      expect(result.presentation).toBe("topic_shortcuts");
     }
     expect(diagnostics.handoffs).toEqual({});
+  });
+
+  it("uses a brief farewell after a full closing response", async () => {
+    const { assistant, store } = createContext();
+
+    const thanks = await assistant.process({
+      externalMessageId: "closing-1",
+      externalUserId: "closing-user",
+      type: "text",
+      text: "Thank you for your help",
+      receivedAt: new Date().toISOString(),
+    });
+    const goodbye = await assistant.process({
+      externalMessageId: "closing-2",
+      externalUserId: "closing-user",
+      type: "text",
+      text: "Bye",
+      receivedAt: new Date(Date.now() + 1000).toISOString(),
+    });
+    const laterQuestion = await assistant.process({
+      externalMessageId: "closing-3",
+      externalUserId: "closing-user",
+      type: "text",
+      text: "How should books be organized?",
+      receivedAt: new Date(Date.now() + 2000).toISOString(),
+    });
+    const laterGoodbye = await assistant.process({
+      externalMessageId: "closing-4",
+      externalUserId: "closing-user",
+      type: "text",
+      text: "Goodbye",
+      receivedAt: new Date(Date.now() + 3000).toISOString(),
+    });
+    store.close();
+
+    expect(thanks.status).toBe("answered");
+    if (thanks.status === "answered") {
+      expect(thanks.answer).toContain("glad I could help");
+      expect(thanks.presentation).toBeUndefined();
+    }
+    expect(goodbye.status).toBe("answered");
+    if (goodbye.status === "answered") {
+      expect(goodbye.answer).toBe("Goodbye!");
+    }
+    expect(laterQuestion.status).toBe("answered");
+    expect(laterGoodbye.status).toBe("answered");
+    if (laterGoodbye.status === "answered") {
+      expect(laterGoodbye.answer).toContain("glad I could help");
+    }
   });
 
   it("hands off explicit human requests and keeps the bot paused", async () => {

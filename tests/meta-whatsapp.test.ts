@@ -164,6 +164,57 @@ describe("MetaWhatsAppGateway", () => {
       });
     });
 
+  it("sends interactive reply buttons", async () => {
+      let requestBody: Record<string, unknown> | undefined;
+      const fakeFetch = async (
+        _input: RequestInfo | URL,
+        init?: RequestInit,
+      ): Promise<Response> => {
+        requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        return Response.json({ messages: [{ id: "wamid.buttons" }] });
+      };
+      const gateway = new MetaWhatsAppGateway(config(), fakeFetch);
+
+      await gateway.sendButtons({
+        to: "254700000001",
+        message: {
+          body: "Type any question or choose an optional shortcut.",
+          buttons: [
+            { id: "topic:en:arrange-books", title: "Arrange books" },
+            { id: "menu:en:topics", title: "More topics" },
+          ],
+        },
+      });
+
+      expect(requestBody).toMatchObject({
+        type: "interactive",
+        interactive: {
+          type: "button",
+          body: {
+            text: "Type any question or choose an optional shortcut.",
+          },
+          action: {
+            buttons: [
+              {
+                type: "reply",
+                reply: {
+                  id: "topic:en:arrange-books",
+                  title: "Arrange books",
+                },
+              },
+              {
+                type: "reply",
+                reply: {
+                  id: "menu:en:topics",
+                  title: "More topics",
+                },
+              },
+            ],
+          },
+        },
+      });
+    });
+
   it("retrieves, downloads, and verifies media", async () => {
     const bytes = new TextEncoder().encode("voice-note");
     const checksum = createHash("sha256").update(bytes).digest("hex");

@@ -43,6 +43,7 @@ export type SupportResponse =
       language: SupportedLanguage;
       answer: string;
       citations: Citation[];
+      presentation?: "topic_shortcuts";
     }
   | {
       status: "handoff";
