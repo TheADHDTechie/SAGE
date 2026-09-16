@@ -511,6 +511,7 @@ sequenceDiagram
     participant A as API service
     participant D as SQLite
     participant L as GPT-5.6 Luna
+    participant S as Azure TTS
 
     U->>W: Text question
     W->>A: Webhook message
@@ -520,8 +521,19 @@ sequenceDiagram
     L-->>A: Structured grounded answer
     A->>A: Validate citations and policy
     A->>D: Store result
-    A->>W: Send text response
-    W->>U: Answer with page citation
+    A->>D: Load reply preference
+    alt Automatic or Text
+        A->>W: Send complete text answer and sources
+        W->>U: Text answer with page citations
+    else Voice or Both
+        A->>S: Validated answer + selected voice
+        S-->>A: OGG/Opus audio
+        A->>W: Upload audio and receive media ID
+        A->>D: Store ordered delivery plan
+        A->>W: Send voice answer
+        A->>W: Send sources or complete text
+        W->>U: Voice answer with requested text
+    end
 ```
 
 ### 7.2 Voice question
@@ -531,28 +543,38 @@ sequenceDiagram
     participant U as User
     participant W as WhatsApp
     participant A as API service
-    participant S as Azure Speech
+    participant STT as Azure Speech STT
     participant L as GPT-5.6 Luna
+    participant TTS as Azure Speech TTS
     participant D as SQLite
 
     U->>W: Voice memo
     W->>A: Webhook with media ID
     A->>W: Retrieve and download media
-    A->>S: Converted WAV + en-US/sw-KE candidates
-    S-->>A: Transcript and locale
+    A->>STT: Converted WAV + en-US/sw-KE candidates
+    STT-->>A: Transcript and locale
     A->>A: Delete temporary audio
     A->>L: Transcript + history + full manual
     L-->>A: Structured grounded answer
     A->>A: Validate citations and policy
-    A->>S: Validated answer + selected voice
-    S-->>A: OGG/Opus audio
-    A->>W: Upload audio media
-    W-->>A: Meta media ID
-    A->>D: Store audio, sources and preference-list delivery steps
-    A->>W: Send WhatsApp voice message
-    A->>W: Send text sources
-    A->>W: Offer reply-format list once
-    W->>U: Voice answer + sources + preferences
+    A->>D: Load Automatic, Text, Voice or Both
+    alt Text preference
+        A->>D: Store text delivery step
+        A->>W: Send complete text answer and sources
+        W->>U: Text answer with page citations
+    else Automatic, Voice or Both
+        A->>TTS: Validated answer + selected voice
+        TTS-->>A: OGG/Opus audio
+        A->>W: Upload audio media
+        W-->>A: Meta media ID
+        A->>D: Store audio and text delivery steps
+        A->>W: Send WhatsApp voice message
+        A->>W: Send sources or complete text
+        opt First successful Automatic voice reply
+            A->>W: Offer reply-format list once
+        end
+        W->>U: Voice answer + text + optional preferences
+    end
 ```
 
 ### 7.3 Reply preference selection
@@ -595,7 +617,7 @@ staff member, who can reply in this conversation.
 
 The exact message is localized and approved by SAL.
 
-#### Coexistence handoff
+#### Planned Coexistence handoff
 
 ```mermaid
 sequenceDiagram
