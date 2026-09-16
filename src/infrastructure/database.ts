@@ -182,7 +182,11 @@ export class ConversationStore {
       this.database
         .prepare(
           `UPDATE conversations
-           SET status = 'waiting_for_human', updated_at = ?
+           SET status = 'waiting_for_human',
+               clarification_reason = NULL,
+               clarification_attempts = 0,
+               clarification_started_at = NULL,
+               updated_at = ?
            WHERE id = ?`,
         )
         .run(now, conversationId);
@@ -200,10 +204,75 @@ export class ConversationStore {
     this.database
       .prepare(
         `UPDATE conversations
-         SET status = 'closed', updated_at = ?, closed_at = ?
+         SET status = 'closed',
+             clarification_reason = NULL,
+             clarification_attempts = 0,
+             clarification_started_at = NULL,
+             updated_at = ?,
+             closed_at = ?
          WHERE id = ?`,
       )
       .run(now, now, conversationId);
+  }
+
+  recordClarification(conversationId: string, reason: string) {
+    const now = new Date().toISOString();
+    return this.database.transaction(() => {
+      this.database
+        .prepare(
+          `UPDATE conversations
+           SET clarification_reason = ?,
+               clarification_attempts = clarification_attempts + 1,
+               clarification_started_at = COALESCE(clarification_started_at, ?),
+               updated_at = ?
+           WHERE id = ? AND status = 'bot'`,
+        )
+        .run(reason, now, now, conversationId);
+      const row = this.database
+        .prepare(
+          `SELECT clarification_reason AS reason,
+                  clarification_attempts AS attempts,
+                  clarification_started_at AS startedAt
+           FROM conversations
+           WHERE id = ?`,
+        )
+        .get(conversationId) as {
+        reason: string | null;
+        attempts: number;
+        startedAt: string | null;
+      };
+      return row;
+    })();
+  }
+
+  clearClarification(conversationId: string) {
+    this.database
+      .prepare(
+        `UPDATE conversations
+         SET clarification_reason = NULL,
+             clarification_attempts = 0,
+             clarification_started_at = NULL
+         WHERE id = ?`,
+      )
+      .run(conversationId);
+  }
+
+  clarificationState(conversationId: string) {
+    return this.database
+      .prepare(
+        `SELECT clarification_reason AS reason,
+                clarification_attempts AS attempts,
+                clarification_started_at AS startedAt
+         FROM conversations
+         WHERE id = ?`,
+      )
+      .get(conversationId) as
+      | {
+          reason: string | null;
+          attempts: number;
+          startedAt: string | null;
+        }
+      | undefined;
   }
 
   resetConversationForUser(externalUserId: string) {
@@ -223,8 +292,13 @@ export class ConversationStore {
         this.database
           .prepare(
             `UPDATE conversations
-             SET status = 'closed', updated_at = ?, closed_at = ?
-             WHERE id = ?`,
+               SET status = 'closed',
+                   clarification_reason = NULL,
+                   clarification_attempts = 0,
+                   clarification_started_at = NULL,
+                   updated_at = ?,
+                   closed_at = ?
+               WHERE id = ?`,
           )
           .run(now, now, conversation.id);
         this.database
@@ -618,6 +692,9 @@ export class ConversationStore {
         contact_id TEXT NOT NULL,
         status TEXT NOT NULL CHECK (status IN ('bot', 'waiting_for_human', 'human', 'closed')),
         assigned_to TEXT,
+        clarification_reason TEXT,
+        clarification_attempts INTEGER NOT NULL DEFAULT 0,
+        clarification_started_at TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         closed_at TEXT,
@@ -689,6 +766,13 @@ export class ConversationStore {
       "voice_preference_prompted",
       "INTEGER NOT NULL DEFAULT 0",
     );
+    this.ensureColumn("conversations", "clarification_reason", "TEXT");
+    this.ensureColumn(
+      "conversations",
+      "clarification_attempts",
+      "INTEGER NOT NULL DEFAULT 0",
+    );
+    this.ensureColumn("conversations", "clarification_started_at", "TEXT");
     this.ensureColumn("whatsapp_deliveries", "delivery_plan_json", "TEXT");
   }
 

@@ -25,6 +25,11 @@ export type WhatsAppDeliveryStep =
   | (DeliveryStepState & {
       kind: "topic_list";
       language: "en" | "sw";
+    })
+  | (DeliveryStepState & {
+      kind: "staff_options";
+      language: "en" | "sw";
+      body: string;
     });
 
 export interface WhatsAppDeliveryPlan {

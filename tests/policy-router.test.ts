@@ -15,6 +15,13 @@ describe("policy routing", () => {
     }
   });
 
+  it.each(["STAFF", "HUMAN", "I need a human", "MFANYAKAZI"])(
+    "routes the explicit staff command %s",
+    (message) => {
+      expect(routeByPolicy(message).action).toBe("handoff");
+    },
+  );
+
   it("routes safeguarding language to staff", () => {
     const decision = routeByPolicy("A child reported physical punishment");
 
@@ -75,6 +82,21 @@ describe("policy routing", () => {
     expect(
       routeByPolicy("What should a teacher librarian do each morning?").action,
     ).toBe("continue");
+  });
+
+  it("does not treat a question about library staff as a handoff request", () => {
+    expect(
+      routeByPolicy("What are the responsibilities of library staff?").action,
+    ).toBe("continue");
+  });
+
+  it("asks an unrelated user to clarify instead of handing off", () => {
+    const decision = routeByPolicy("What is the weather today?");
+
+    expect(decision.action).toBe("clarify");
+    if (decision.action === "clarify") {
+      expect(decision.reason).toBe("out_of_scope");
+    }
   });
 
   it("closes an opt-out conversation", () => {

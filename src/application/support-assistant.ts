@@ -16,9 +16,26 @@ const humanActiveResponses: Record<"en" | "sw", string> = {
   sw: "Mfanyakazi wa SAL anashughulikia mazungumzo haya na anaweza kujibu hapa.",
 };
 
-const unsupportedResponses: Record<"en" | "sw", string> = {
-  en: "I could not confirm that from the SAL guide. I have forwarded your question to a SAL staff member.",
-  sw: "Sikuweza kuthibitisha hilo kutoka kwenye mwongozo wa SAL. Nimepeleka swali lako kwa mfanyakazi wa SAL.",
+const clarificationResponses: Record<
+  "en" | "sw",
+  { first: string; repeat: string; serviceFailure: string }
+> = {
+  en: {
+    first:
+      "I couldn't match that question to information in the SAL school-library guide. Please rephrase it as a question about setting up or running a school library. For example: \"How should I arrange books?\" or \"How do I manage book borrowing?\"\n\nYou can also type STAFF or HUMAN if you would like help from a SAL staff member.",
+    repeat:
+      "I still couldn't find that in the SAL guide. Try another school-library question, choose a common topic, or type STAFF to speak with SAL.",
+    serviceFailure:
+      "SAGE is temporarily unable to check the SAL guide. Please try again shortly, choose a common topic, or type STAFF to speak with SAL.",
+  },
+  sw: {
+    first:
+      "Sikuweza kulinganisha swali hilo na maelezo katika mwongozo wa SAL wa maktaba za shule. Tafadhali liulize tena kuhusu kuanzisha au kuendesha maktaba ya shule. Kwa mfano: \"Nipangeje vitabu?\" au \"Nisimamieje kuazima vitabu?\"\n\nUnaweza pia kuandika MFANYAKAZI au HUMAN kupata msaada wa mfanyakazi wa SAL.",
+    repeat:
+      "Bado sikuweza kupata jibu hilo katika mwongozo wa SAL. Jaribu swali lingine kuhusu maktaba ya shule, chagua mada, au andika MFANYAKAZI kuzungumza na SAL.",
+    serviceFailure:
+      "SAGE haiwezi kuangalia mwongozo wa SAL kwa muda. Tafadhali jaribu tena baadaye kidogo, chagua mada, au andika MFANYAKAZI kuzungumza na SAL.",
+  },
 };
 
 const handoffReturnInstructions: Record<"en" | "sw", string> = {
@@ -104,6 +121,7 @@ export class SupportAssistant {
         this.previousAssistantMessageWasClosing(inbound.conversationId)
           ? policy.briefResponse
           : policy.response;
+      this.store.clearClarification(inbound.conversationId);
       this.store.recordAssistantMessage({
         conversationId: inbound.conversationId,
         content: response,
@@ -119,6 +137,14 @@ export class SupportAssistant {
           ? { presentation: "topic_shortcuts" as const }
           : {}),
       };
+    }
+
+    if (policy.action === "clarify") {
+      return this.clarify(
+        inbound.conversationId,
+        policy.language,
+        policy.reason,
+      );
     }
 
     if (policy.action === "handoff") {
@@ -147,11 +173,11 @@ export class SupportAssistant {
           error: error instanceof Error ? error.message : "Unknown error",
         },
       });
-      return this.handoff(
+      return this.clarify(
         inbound.conversationId,
         policy.language,
         "language_model_failure",
-        unsupportedResponses[responseLanguage],
+        true,
       );
     }
 
@@ -165,16 +191,15 @@ export class SupportAssistant {
       result.citedChunkIds.length === 0 ||
       !citationsValid
     ) {
-      const language = baseLanguage(result.language);
-      return this.handoff(
+      return this.clarify(
         inbound.conversationId,
         result.language,
         result.handoffReason ?? "manual_content_insufficient",
-        unsupportedResponses[language],
       );
     }
 
     const citations = this.manual.citations(result.citedChunkIds);
+    this.store.clearClarification(inbound.conversationId);
     this.store.recordAssistantMessage({
       conversationId: inbound.conversationId,
       content: result.answer,
@@ -189,6 +214,35 @@ export class SupportAssistant {
       language: result.language,
       answer: result.answer,
       citations,
+    };
+  }
+
+  private clarify(
+    conversationId: string,
+    language: SupportedLanguage,
+    reason: string,
+    serviceFailure = false,
+  ): SupportResponse {
+    const responseLanguage = baseLanguage(language);
+    const state = this.store.recordClarification(conversationId, reason);
+    const responses = clarificationResponses[responseLanguage];
+    const response = serviceFailure
+      ? responses.serviceFailure
+      : state.attempts === 1
+        ? responses.first
+        : responses.repeat;
+    this.store.recordAssistantMessage({
+      conversationId,
+      content: response,
+      language,
+    });
+    return {
+      status: "answered",
+      conversationId,
+      language,
+      answer: response,
+      citations: [],
+      presentation: "staff_options",
     };
   }
 

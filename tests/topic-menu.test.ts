@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   parseTopicMenuCommand,
+  staffOptionMessage,
+  staffRequestSelection,
   topicList,
   topicListSelection,
   topicQuestion,
@@ -31,5 +33,16 @@ describe("topic menu", () => {
     expect(topicListSelection("menu:sw:topics")).toBe("sw");
     expect(parseTopicMenuCommand("TOPICS!")).toBe("en");
     expect(parseTopicMenuCommand("MADA")).toBe("sw");
+  });
+
+  it("provides deterministic staff actions", () => {
+    expect(staffOptionMessage("en", "Please rephrase.").buttons).toEqual([
+      { id: "menu:en:topics", title: "Popular topics" },
+      { id: "action:en:request-staff", title: "Talk to staff" },
+    ]);
+    expect(staffRequestSelection("action:sw:request-staff")).toEqual({
+      language: "sw",
+      command: "MFANYAKAZI",
+    });
   });
 });

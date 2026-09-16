@@ -80,7 +80,7 @@
 
   <rect class="node" x="435" y="527" width="530" height="88" rx="18" fill="url(#service)"/>
   <text x="700" y="560" text-anchor="middle" class="title">Policy, conversation and preference router</text>
-  <text x="700" y="586" text-anchor="middle" class="detail">Safety, greetings, closings, topics, handoff and reply modes</text>
+  <text x="700" y="586" text-anchor="middle" class="detail">Safety, social controls, clarify-first routing and handoff</text>
 
   <rect class="node" x="1025" y="515" width="275" height="106" rx="18" fill="url(#local)"/>
   <text x="1162" y="549" text-anchor="middle" class="title">SQLite</text>

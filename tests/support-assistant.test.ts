@@ -248,7 +248,7 @@ describe("SupportAssistant", () => {
     expect(question.status).toBe("answered");
   });
 
-  it("hands off when the model returns an invalid citation", async () => {
+  it("asks for clarification when the model returns an invalid citation", async () => {
     class InvalidCitationGateway implements LanguageModelGateway {
       readonly deploymentName = "invalid-citation-test";
 
@@ -271,8 +271,102 @@ describe("SupportAssistant", () => {
       text: "Tell me about library rules",
       receivedAt: new Date().toISOString(),
     });
+    const state =
+      result.status === "answered"
+        ? store.clarificationState(result.conversationId)
+        : undefined;
+    const diagnostics = store.whatsAppDiagnostics();
     store.close();
 
-    expect(result.status).toBe("handoff");
+    expect(result.status).toBe("answered");
+    if (result.status === "answered") {
+      expect(result.presentation).toBe("staff_options");
+      expect(result.answer).toContain("rephrase");
+    }
+    expect(state).toMatchObject({
+      reason: "manual_content_insufficient",
+      attempts: 1,
+    });
+    expect(diagnostics.handoffs).toEqual({});
+  });
+
+  it("tracks repeated clarification and clears it after a supported question", async () => {
+    const { assistant, store } = createContext();
+
+    const first = await assistant.process({
+      externalMessageId: "clarify-1",
+      externalUserId: "clarify-user",
+      type: "text",
+      text: "What is the weather today?",
+      receivedAt: new Date().toISOString(),
+    });
+    const second = await assistant.process({
+      externalMessageId: "clarify-2",
+      externalUserId: "clarify-user",
+      type: "text",
+      text: "What are today's stock prices?",
+      receivedAt: new Date(Date.now() + 1000).toISOString(),
+    });
+    const answered = await assistant.process({
+      externalMessageId: "clarify-3",
+      externalUserId: "clarify-user",
+      type: "text",
+      text: "How should books be organized?",
+      receivedAt: new Date(Date.now() + 2000).toISOString(),
+    });
+    const conversationId =
+      first.status === "answered" ? first.conversationId : "";
+    const state = store.clarificationState(conversationId);
+    const diagnostics = store.whatsAppDiagnostics();
+    store.close();
+
+    expect(first.status).toBe("answered");
+    if (first.status === "answered") {
+      expect(first.answer).toContain("rephrase");
+      expect(first.presentation).toBe("staff_options");
+    }
+    expect(second.status).toBe("answered");
+    if (second.status === "answered") {
+      expect(second.answer).toContain("still couldn't find");
+    }
+    expect(answered.status).toBe("answered");
+    expect(state).toMatchObject({
+      reason: null,
+      attempts: 0,
+      startedAt: null,
+    });
+    expect(diagnostics.handoffs).toEqual({});
+  });
+
+  it("offers retry or staff when the language model is temporarily unavailable", async () => {
+    class FailingLanguageModelGateway implements LanguageModelGateway {
+      readonly deploymentName = "failing-model";
+
+      async answerSupportQuestion(
+        _input: LanguageModelInput,
+      ): Promise<SupportModelResult> {
+        throw new Error("Temporary model outage");
+      }
+    }
+
+    const { assistant, store } = createContext(
+      new FailingLanguageModelGateway(),
+    );
+    const result = await assistant.process({
+      externalMessageId: "model-failure-1",
+      externalUserId: "model-failure-user",
+      type: "text",
+      text: "How should books be organized?",
+      receivedAt: new Date().toISOString(),
+    });
+    const diagnostics = store.whatsAppDiagnostics();
+    store.close();
+
+    expect(result.status).toBe("answered");
+    if (result.status === "answered") {
+      expect(result.answer).toContain("temporarily unable");
+      expect(result.presentation).toBe("staff_options");
+    }
+    expect(diagnostics.handoffs).toEqual({});
   });
 });

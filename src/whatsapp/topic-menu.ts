@@ -183,3 +183,36 @@ export function topicMenuTextFallback(language: TopicMenuLanguage) {
     ? "Unaweza kuandika swali lolote au kutuma ujumbe wa sauti kuhusu maktaba ya shule. Mada maarufu ni kupanga vitabu, kuanzisha maktaba, kuazima vitabu, rekodi, shughuli za kusoma na kutunza vitabu. Tuma MADA kuona orodha tena."
     : "You can type any question or send a voice note about your school library. Popular topics include arranging books, starting a library, borrowing, records, reading activities, and caring for books. Send TOPICS to see the menu again.";
 }
+
+export function staffOptionMessage(
+  language: TopicMenuLanguage,
+  body: string,
+): WhatsAppButtonMessage {
+  return {
+    body,
+    buttons:
+      language === "sw"
+        ? [
+            { id: "menu:sw:topics", title: "Mada maarufu" },
+            { id: "action:sw:request-staff", title: "Ongea na SAL" },
+          ]
+        : [
+            { id: "menu:en:topics", title: "Popular topics" },
+            { id: "action:en:request-staff", title: "Talk to staff" },
+          ],
+  };
+}
+
+export function staffRequestSelection(
+  selectionId: string,
+): { language: TopicMenuLanguage; command: string } | undefined {
+  const match = /^action:(en|sw):request-staff$/.exec(selectionId);
+  if (!match) {
+    return undefined;
+  }
+  const language = match[1] as TopicMenuLanguage;
+  return {
+    language,
+    command: language === "sw" ? "MFANYAKAZI" : "STAFF",
+  };
+}

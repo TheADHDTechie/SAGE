@@ -15,6 +15,8 @@ import type {
 } from "./delivery-types.js";
 import {
   parseTopicMenuCommand,
+  staffOptionMessage,
+  staffRequestSelection,
   topicList,
   topicListSelection,
   topicMenuTextFallback,
@@ -425,29 +427,35 @@ async function processWhatsAppMessage(input: {
         await sendPreparedDelivery(message.id, message.from, store, gateway);
         return;
       }
-      const topicMenuLanguage = topicListSelection(selectionId ?? "");
-      if (topicMenuLanguage) {
-        store.prepareWhatsAppDeliveryPlan(message.id, {
-          steps: [{ kind: "topic_list", language: topicMenuLanguage }],
-        });
-        await sendPreparedDelivery(message.id, message.from, store, gateway);
-        return;
+      const staffRequest = staffRequestSelection(selectionId ?? "");
+      if (staffRequest) {
+        text = staffRequest.command;
+        inputType = "text";
+      } else {
+        const topicMenuLanguage = topicListSelection(selectionId ?? "");
+        if (topicMenuLanguage) {
+          store.prepareWhatsAppDeliveryPlan(message.id, {
+            steps: [{ kind: "topic_list", language: topicMenuLanguage }],
+          });
+          await sendPreparedDelivery(message.id, message.from, store, gateway);
+          return;
+        }
+        const selectedTopic = topicQuestion(selectionId ?? "");
+        if (!selectedTopic) {
+          const response =
+            "I could not read that selection. Type your question directly, or send TOPICS to see the topic menu.";
+          store.prepareWhatsAppDelivery(message.id, response);
+          await sendPreparedDelivery(
+            message.id,
+            message.from,
+            store,
+            gateway,
+          );
+          return;
+        }
+        text = selectedTopic.question;
+        inputType = "text";
       }
-      const selectedTopic = topicQuestion(selectionId ?? "");
-      if (!selectedTopic) {
-        const response =
-          "I could not read that selection. Type your question directly, or send TOPICS to see the topic menu.";
-        store.prepareWhatsAppDelivery(message.id, response);
-        await sendPreparedDelivery(
-          message.id,
-          message.from,
-          store,
-          gateway,
-        );
-        return;
-      }
-      text = selectedTopic.question;
-      inputType = "text";
     } else if (message.type === "audio" && message.audio?.id) {
       if (store.isHumanActiveForUser(message.from)) {
         store.completeWhatsAppWithoutResponse(message.id);
@@ -726,6 +734,28 @@ async function sendDeliveryStep(
       });
     }
   }
+  if (step.kind === "staff_options") {
+    try {
+      return await gateway.sendButtons({
+        to: recipient,
+        message: staffOptionMessage(step.language, step.body),
+        replyToMessageId: inboundMessageId,
+      });
+    } catch (error) {
+      store.recordAuditEvent({
+        eventType: "whatsapp_interactive_failure",
+        details: {
+          messageId: inboundMessageId,
+          error: errorMessage(error),
+        },
+      });
+      return gateway.sendText({
+        to: recipient,
+        body: step.body,
+        replyToMessageId: inboundMessageId,
+      });
+    }
+  }
   return gateway.sendText({
     to: recipient,
     body: step.body,
@@ -762,6 +792,17 @@ async function createResponsePlan(input: {
         {
           kind: "topic_shortcuts",
           language: response.language === "sw" ? "sw" : "en",
+        },
+      ],
+    };
+  }
+  if (response.presentation === "staff_options") {
+    return {
+      steps: [
+        {
+          kind: "staff_options",
+          language: response.language === "sw" ? "sw" : "en",
+          body: response.answer,
         },
       ],
     };

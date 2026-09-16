@@ -10,6 +10,11 @@ export type PolicyDecision =
       closingStyle?: "gratitude" | "farewell";
       briefResponse?: string;
     }
+  | {
+      action: "clarify";
+      language: SupportedLanguage;
+      reason: "out_of_scope";
+    }
   | { action: "handoff"; language: SupportedLanguage; reason: string; response: string }
   | { action: "resume"; language: SupportedLanguage; response: string }
   | { action: "close"; language: SupportedLanguage; response: string };
@@ -38,8 +43,10 @@ const kiswahiliSignals = [
 ];
 
 const humanPatterns = [
-  /\b(human|person|agent|staff|representative)\b/i,
-  /\b(talk|speak|chat)\s+(to|with)\b/i,
+  /^\s*(?:human|staff|agent|representative|person|mfanyakazi|mhudumu)\s*[!.]*\s*$/i,
+  /^\s*i\s+(?:want|need|would\s+like)\s+(?:(?:to\s+)?(?:talk|speak|chat)\s+(?:to|with)\s+)?(?:a\s+)?(?:human|person|agent|staff|representative)(?:\s+member)?\s*[!.]*\s*$/i,
+  /\b(?:talk|speak|chat)\s+(?:to|with)\s+(?:a\s+)?(?:human|person|agent|staff|representative)\b/i,
+  /\b(?:connect|transfer)\s+me\s+to\s+(?:a\s+)?(?:human|person|agent|staff|representative)\b/i,
   /\b(zungumza|ongea)\s+na\b/i,
   /\b(nataka|naomba|nahitaji)\b.{0,30}\b(mtu|mfanyakazi|afisa)\b/i,
   /\b(niunganishe|nipatie)\b.{0,30}\b(mtu|mfanyakazi|afisa)\b/i,
@@ -181,13 +188,9 @@ export function routeByPolicy(message: string): PolicyDecision {
 
   if (obviousOutOfScopePatterns.some((pattern) => pattern.test(message))) {
     return {
-      action: "handoff",
+      action: "clarify",
       language,
       reason: "out_of_scope",
-      response:
-        language === "sw"
-          ? "Sikuweza kuthibitisha hilo kutoka kwenye mwongozo wa SAL. Nimepeleka swali lako kwa mfanyakazi wa SAL."
-          : "I could not confirm that from the SAL guide. I have forwarded your question to a SAL staff member.",
     };
   }
 

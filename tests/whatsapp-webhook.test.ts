@@ -328,7 +328,7 @@ describe("WhatsApp webhook", () => {
     await app.close();
 
     expect(response.statusCode).toBe(200);
-    expect(gateway.sent).toHaveLength(1);
+    expect(gateway.sent.length + gateway.sentButtons.length).toBe(1);
   });
 
   it("does not resend a completed duplicate delivery", async () => {
@@ -634,6 +634,38 @@ describe("WhatsApp webhook", () => {
     expect(response.statusCode).toBe(200);
     expect(gateway.sentButtons).toHaveLength(0);
     expect(gateway.sent[0]?.body).toContain("type any question");
+  });
+
+  it("offers clarification choices and hands off only after staff is selected", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const { app } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+
+    const clarification = await injectWebhook(
+      app,
+      textPayload("message-clarify-first", "What is the weather today?"),
+    );
+    const handoff = await injectWebhook(
+      app,
+      interactivePayload(
+        "message-clarify-staff",
+        "action:en:request-staff",
+      ),
+    );
+    await app.close();
+
+    expect(clarification.statusCode).toBe(200);
+    expect(gateway.sentButtons).toHaveLength(1);
+    expect(gateway.sentButtons[0]?.message.body).toContain("rephrase");
+    expect(gateway.sentButtons[0]?.message.buttons).toEqual([
+      { id: "menu:en:topics", title: "Popular topics" },
+      { id: "action:en:request-staff", title: "Talk to staff" },
+    ]);
+    expect(handoff.statusCode).toBe(200);
+    expect(gateway.sent).toHaveLength(1);
+    expect(gateway.sent[0]?.body).toContain("SAL staff member");
+    expect(gateway.sent[0]?.body).toContain("Reply BOT");
   });
 
   it("uses a short farewell after a full WhatsApp closing response", async () => {
