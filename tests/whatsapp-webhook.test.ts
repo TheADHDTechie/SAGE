@@ -829,6 +829,25 @@ describe("WhatsApp webhook", () => {
     expect(gateway.sent[1]?.body).toContain("Organizing and Arranging Books");
   });
 
+  it("cancels handoff and resumes chatbot control when the user sends BOT", async () => {
+    const gateway = new FakeWhatsAppGateway();
+    const { app } = await buildApp(whatsAppConfig(), {
+      whatsAppGateway: gateway,
+    });
+
+    await injectWebhook(app, textPayload("message-bot-resume-1", "I need a human"));
+    await injectWebhook(app, textPayload("message-bot-resume-2", "BOT"));
+    await injectWebhook(
+      app,
+      textPayload("message-bot-resume-3", "How should books be organized?"),
+    );
+    await app.close();
+
+    expect(gateway.sent).toHaveLength(3);
+    expect(gateway.sent[1]?.body).toContain("handoff has been cancelled");
+    expect(gateway.sent[2]?.body).toContain("Organizing and Arranging Books");
+  });
+
   it("rejects staff reset requests with an invalid bearer token", async () => {
     const { app } = await buildApp(whatsAppConfig(), {
       whatsAppGateway: new FakeWhatsAppGateway(),

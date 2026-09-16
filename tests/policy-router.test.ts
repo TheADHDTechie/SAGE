@@ -53,4 +53,11 @@ describe("policy routing", () => {
   it("closes an opt-out conversation", () => {
     expect(routeByPolicy("STOP").action).toBe("close");
   });
+
+  it.each(["BOT", "bot", "BOT!"])(
+    "routes the chatbot resume command %s",
+    (message) => {
+      expect(routeByPolicy(message).action).toBe("resume");
+    },
+  );
 });

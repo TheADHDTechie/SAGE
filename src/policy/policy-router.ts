@@ -4,6 +4,7 @@ export type PolicyDecision =
   | { action: "continue"; language: SupportedLanguage }
   | { action: "respond"; language: SupportedLanguage; response: string }
   | { action: "handoff"; language: SupportedLanguage; reason: string; response: string }
+  | { action: "resume"; language: SupportedLanguage; response: string }
   | { action: "close"; language: SupportedLanguage; response: string };
 
 const kiswahiliSignals = [
@@ -40,6 +41,8 @@ const stopPatterns = [
   /^\s*(acha|sitisha)\s*$/i,
 ];
 
+const resumeBotPattern = /^\s*bot\s*[!.]*\s*$/i;
+
 const safeguardingPatterns = [
   /\b(child abuse|abuse a child|sexual abuse|physical punishment|unsafe child)\b/i,
   /\b(learner|child).{0,30}\bunsafe\b/i,
@@ -69,6 +72,15 @@ const socialResponses: Record<"en" | "sw", string> = {
 
 export function routeByPolicy(message: string): PolicyDecision {
   const language = detectLanguage(message);
+
+  if (resumeBotPattern.test(message)) {
+    return {
+      action: "resume",
+      language,
+      response:
+        "The handoff has been cancelled. You are now back with the SAGE chatbot. How can I help?",
+    };
+  }
 
   if (stopPatterns.some((pattern) => pattern.test(message))) {
     return {

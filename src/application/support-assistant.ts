@@ -18,6 +18,11 @@ const unsupportedResponses: Record<"en" | "sw", string> = {
   sw: "Sikuweza kuthibitisha hilo kutoka kwenye mwongozo wa SAL. Nimepeleka swali lako kwa mfanyakazi wa SAL.",
 };
 
+const handoffReturnInstructions: Record<"en" | "sw", string> = {
+  en: "Reply BOT at any time to cancel the handoff and return to SAGE.",
+  sw: "Jibu BOT wakati wowote ili kusitisha uhamisho na kurudi kwa SAGE.",
+};
+
 export class SupportAssistant {
   constructor(
     private readonly manual: ManualRepository,
@@ -39,6 +44,27 @@ export class SupportAssistant {
 
     const policy = routeByPolicy(message.text);
     const responseLanguage = baseLanguage(policy.language);
+
+    if (policy.action === "resume") {
+      if (
+        inbound.status === "waiting_for_human" ||
+        inbound.status === "human"
+      ) {
+        this.store.resetConversationForUser(message.externalUserId);
+      }
+      this.store.recordAssistantMessage({
+        conversationId: inbound.conversationId,
+        content: policy.response,
+        language: policy.language,
+      });
+      return {
+        status: "answered",
+        conversationId: inbound.conversationId,
+        language: policy.language,
+        answer: policy.response,
+        citations: [],
+      };
+    }
 
     if (
       inbound.status === "waiting_for_human" ||
@@ -159,17 +185,18 @@ export class SupportAssistant {
     reason: string,
     response: string,
   ): SupportResponse {
+    const handoffResponse = `${response}\n\n${handoffReturnInstructions[baseLanguage(language)]}`;
     this.store.createHandoff(conversationId, reason);
     this.store.recordAssistantMessage({
       conversationId,
-      content: response,
+      content: handoffResponse,
       language,
     });
     return {
       status: "handoff",
       conversationId,
       language,
-      answer: response,
+      answer: handoffResponse,
       reason,
     };
   }

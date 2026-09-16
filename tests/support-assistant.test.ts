@@ -134,6 +134,9 @@ describe("SupportAssistant", () => {
     store.close();
 
     expect(handoff.status).toBe("handoff");
+    if (handoff.status === "handoff") {
+      expect(handoff.answer).toContain("Reply BOT");
+    }
     expect(followUp.status).toBe("human_active");
   });
 
@@ -160,6 +163,39 @@ describe("SupportAssistant", () => {
     store.close();
 
     expect(restarted.status).toBe("answered");
+  });
+
+  it("cancels an active handoff when the user sends BOT", async () => {
+    const { assistant, store } = createContext();
+
+    await assistant.process({
+      externalMessageId: "bot-resume-1",
+      externalUserId: "bot-resume-user",
+      type: "text",
+      text: "I want to speak with a staff member",
+      receivedAt: new Date().toISOString(),
+    });
+    const resumed = await assistant.process({
+      externalMessageId: "bot-resume-2",
+      externalUserId: "bot-resume-user",
+      type: "text",
+      text: "BOT",
+      receivedAt: new Date(Date.now() + 1000).toISOString(),
+    });
+    const question = await assistant.process({
+      externalMessageId: "bot-resume-3",
+      externalUserId: "bot-resume-user",
+      type: "text",
+      text: "How should I organize library books?",
+      receivedAt: new Date(Date.now() + 2000).toISOString(),
+    });
+    store.close();
+
+    expect(resumed.status).toBe("answered");
+    if (resumed.status === "answered") {
+      expect(resumed.answer).toContain("handoff has been cancelled");
+    }
+    expect(question.status).toBe("answered");
   });
 
   it("hands off when the model returns an invalid citation", async () => {
